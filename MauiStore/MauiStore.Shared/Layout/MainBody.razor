@@ -1,0 +1,245 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+
+<style>
+    /* ===== Fondo full-bleed fijo ===== */
+    html, body {
+        height: 100%;
+        margin: 0;
+    }
+
+    .page-bg {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+    }
+        /* Velo opcional para contraste */
+        .page-bg::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+        }
+
+    /* ===== Centro perfecto ===== */
+    .screen-center {
+        position: relative;
+        z-index: 1; /* por encima del velo */
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: clamp(6px, 3vw, 12px);
+        padding-bottom: calc(env(safe-area-inset-bottom, 0) + clamp(6px, 3vw, 12px));
+        width: 100%
+    }
+
+    /* ===== Tarjeta responsiva ===== */
+    .cb-card {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        padding: clamp(12px, 6vw, 30px);
+        /* bordes naranja */
+        border-left: 10px solid #46a441;
+        border-bottom: 10px solid #46a441;
+        border-top-left-radius: 30px;
+        border-top-right-radius: 110px;
+        border-bottom-left-radius: 110px;
+        border-bottom-right-radius: 30px;
+        overflow: hidden;
+        background: white;
+        /* imagen decorativa interna */
+        background-image: url('/images/fondoTransparente.png');
+        background-repeat: no-repeat;
+        background-position: 50% 50%;
+        background-size: 100% auto; /* valor base, ajustado por breakpoints abajo */
+    }
+
+        .cb-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+    .cbpeq-card {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        padding: clamp(12px, 6vw, 30px);
+        /* bordes naranja */
+        border-left: 10px solid #46a441;
+        border-bottom: 10px solid #46a441;
+        border-top-left-radius: 30px;
+        border-top-right-radius: 110px;
+        border-bottom-left-radius: 110px;
+        border-bottom-right-radius: 30px;
+        overflow: hidden;
+        background: white;
+        /* imagen decorativa interna */
+        background-image: url('/images/fondoTransparente.png');
+        background-repeat: no-repeat;
+        background-position: 50% 50%;
+        background-size: 100% auto; /* valor base, ajustado por breakpoints abajo */
+    }
+
+        .cbpeq-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+    /* Logo responsivo y centrado */
+    .logo {
+        display: block;
+        margin-inline: auto;
+        width: clamp(160px, 40vw, 360px);
+        height: auto;
+    }
+
+    @@media (max-width: 480px) {
+        .cb-card {
+            border-left-width: 6px;
+            border-bottom-width: 6px;
+            background-size: 50% auto;
+            width: 100%;
+        }
+    }
+
+    @@media (min-width: 992px) {
+        .cb-card {
+            border-left-width: 12px;
+            border-bottom-width: 12px;
+            background-size: 60% auto;
+            width: 100%;
+        }
+    }
+
+    /* ===== Breakpoints (escapados para Razor) ===== */
+    @@media (max-width: 480px) {
+        .cbpeq-card {
+            border-left-width: 6px;
+            border-bottom-width: 6px;
+            background-size: 50% auto;
+            width: clamp(360px, 60vw, 640px);
+        }
+    }
+
+    @@media (min-width: 992px) {
+        .cbpeq-card {
+            border-left-width: 12px;
+            border-bottom-width: 12px;
+            background-size: 60% auto;
+            width: clamp(360px, 60vw, 640px);
+        }
+    }
+
+    /* Clase utilitaria para negrita con Gotham Rounded */
+    .gotham-bold {
+        font-family: "Gotham Rounded", "Segoe UI", Roboto, Arial, sans-serif;
+        font-weight: 700;
+    }
+
+</style>
+
+<MudLayout>
+    <MudAppBar Elevation="0" Style="background-color:#46a441">
+        @if (_navigationManager.Uri.Substring(_navigationManager.BaseUri.Length) != "")
+        {
+            <!-- Botón de atrás -->
+            <MudIconButton Href="back" Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Inherit" Edge="Edge.Start" />
+        }
+        else
+        {
+            <!-- Logo cuando NO hay atrás -->
+            <MudImage Src="/images/LogoHorizontal.png" Alt="Logo" Style="height:40px; margin-left:8px;" />
+        }
+        <MudSpacer />
+
+        <!-- Íconos a la derecha SIEMPRE -->
+        <MudIconButton Icon="@Icons.Material.TwoTone.Notifications" Color="Color.Inherit" />
+        <MudIconButton Icon="@Icons.Material.TwoTone.Menu" Color="Color.Inherit" OnClick="@((e) => DrawerToggle())" />
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.Left" Class="" Variant="@DrawerVariant.Temporary" ClipMode="DrawerClipMode.Never">
+        <MudDrawerHeader Class="px-0 py-5">
+            <MudCard Elevation="0" Class="pa-0" Square="true" Style="background-color: transparent; width: 100%;">
+                <MudCardContent Class="pt-3">
+                    <BrandLogo />
+                    @* <MudChip T="string" Class="px-3" Color="Color.Success" Size="Size.Small"> v1.0 </MudChip> *@
+                    <MudDivider Class="mt-2" />
+                </MudCardContent>
+            </MudCard>
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent Style="background: url('/images/fondo_principal.png') center/cover no-repeat; min-height: 100dvh;">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-5 mb-15 pt-0 pb-8">
+            <div class="page-bg">
+                <div class="screen-center">
+                    @* <MudGrid>
+                        <MudItem xs="12"> *@
+                    @ChildContent
+
+                    @* </MudItem>
+                    </MudGrid> *@
+                </div>
+            </div>
+        </MudContainer>
+
+        <div class="my-5"></div>
+
+        <BottomNavMenu>
+            <!-- Inicio -->
+            <BottomNavMenuItem Href="/" Icon="@Icons.Material.TwoTone.Cottage" IconColor="Color.Success" Title="Inicio" />
+
+            <!-- Perfil -->
+            <AuthorizeView>
+                <Authorized>
+                    <BottomNavMenuItem Href="Configuracion/MiPerfil" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.PersonOutline" IconColor="Color.Success" Title="Mi perfil"></BottomNavMenuItem>
+                </Authorized>
+                <NotAuthorized>
+                    <BottomNavMenuItem Href="/Ingreso?returnUrl=%2F" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.PersonOutline" IconColor="Color.Success" Title="Ingresar"></BottomNavMenuItem>
+                </NotAuthorized>
+            </AuthorizeView>
+
+        </BottomNavMenu>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback OnDarkModeToggle { get; set; }
+
+    private bool _drawerOpen = false;
+
+    const string RouteBack = "/back";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Register handler to detect "back" navigation route
+        _navigationManager.RegisterLocationChangingHandler(LocationChangingHandler);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private async ValueTask LocationChangingHandler(LocationChangingContext context)
+    {
+        bool isBackRoute = context.TargetLocation.EndsWith(RouteBack, StringComparison.OrdinalIgnoreCase);
+
+        if (isBackRoute)
+        {
+            context.PreventNavigation();
+            await _jsRuntime.InvokeVoidAsync("history.back"); // Call javascript to navigate back
+        }
+    }
+}
+

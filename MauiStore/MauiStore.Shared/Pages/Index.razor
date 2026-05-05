@@ -1,0 +1,48 @@
+﻿@page "/"
+
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Nav
+
+<MudCard Elevation="0" Class="cbpeq-card"> 
+    <MudCardContent>
+                    <MudImage Src="/images/logoSuper.png"
+                              Alt="Compre Bien en línea"
+                              Class="mb-4 logo" />
+
+                    <MudDivider Class="my-3" />
+
+                    <MudText Align="Align.Center">
+                        Bienvenido (a) a <strong>NOMBRE APP</strong>
+                    </MudText>
+
+                    <MudDivider Class="my-3" />
+
+            <AuthorizeView>
+            <Authorized>
+
+            </Authorized>
+            <NotAuthorized>
+                @* Crear cuenta *@
+                <MudButton Class="my-2 py-2 rounded-lg"
+                           Color="Color.Primary" FullWidth="true" Variant="Variant.Filled"
+                           OnClick="@goToRegistrarme">
+                    Crear cuenta
+                </MudButton>
+
+                <!-- Ingresar -->
+                <MudButton Class="my-2 py-2 rounded-lg"
+                           Color="Color.Primary" FullWidth="true" Variant="Variant.Filled"
+                           OnClick="@goToIniciarSesion">
+                    Ingresar
+                </MudButton>
+            </NotAuthorized>
+        </AuthorizeView>
+       </MudCardContent>
+</MudCard>
+
+
+@code 
+{
+    private void goToRegistrarme() => Nav.NavigateTo("/Registrarse");
+    private void goToIniciarSesion() => Nav.NavigateTo("/Ingreso");
+}

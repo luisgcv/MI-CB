@@ -1,0 +1,55 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject MauiStore.Shared.Services.IAuthService Auth
+@inject NavigationManager Nav
+
+@inject MauiStore.Web.Services.ITokenStorageService Storage
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NavigationManager Nav
+
+<MudNavMenu>
+    <AuthorizeView>
+        <Authorized>
+            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Cottage"> Principal </MudNavLink>
+            <MudNavLink Href="/Configuracion/MiPerfil" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Settings"> Mi perfil </MudNavLink>
+        </Authorized>
+        <NotAuthorized>
+            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Cottage"> Principal </MudNavLink>
+        </NotAuthorized>
+    </AuthorizeView>
+
+    <MudDivider Class="my-3" DividerType="DividerType.Inset" />
+
+    <AuthorizeView>
+        <Authorized>
+            <div class="d-flex justify-left">
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Inherit"
+                           StartIcon="@Icons.Material.TwoTone.Logout"
+                           OnClick="Logout">
+                    Cerrar sesión
+                </MudButton>
+            </div>
+        </Authorized>
+@*         <NotAuthorized>
+            <MudNavLink Href="/Ingreso"
+                        Icon="@Icons.Material.TwoTone.Login">
+                Ingresar
+            </MudNavLink>
+        </NotAuthorized> *@
+    </AuthorizeView>
+</MudNavMenu>
+
+
+@code {
+    private async Task Logout()
+    {
+        // Asegúrate que la key coincide con la que usas al guardar el token
+        try { await JS.InvokeVoidAsync("localStorage.removeItem", "auth_token"); } catch { }
+
+        // Pequeña pausa (opcional)
+        await Task.Delay(50);
+
+        // Hard refresh para reiniciar el circuito y el AuthState
+        Nav.NavigateTo("/Ingreso", true);
+    }
+}

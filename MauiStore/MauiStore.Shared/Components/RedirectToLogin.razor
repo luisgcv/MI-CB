@@ -1,0 +1,59 @@
+﻿@using MudBlazor
+@* @inject NavigationManager Nav
+<MudProgressCircular Indeterminate="true" Class="m-4" />
+
+@code {
+    private bool _done;
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _done) return Task.CompletedTask;
+        _done = true;
+
+        // En BlazorWebView (MAUI), Nav.Uri puede ser "app://0/...".
+        // Si ya estamos en /Ingreso, no hagas nada
+        var uri = Nav.Uri ?? "";
+        if (uri.Contains("/Ingreso", StringComparison.OrdinalIgnoreCase))
+            return Task.CompletedTask;
+
+        // Calcula returnUrl robusto
+        var rel = Nav.ToBaseRelativePath(uri);
+        var returnUrl = "/" + (string.IsNullOrWhiteSpace(rel) ? "" : rel);
+        var target = $"/Ingreso?returnUrl={Uri.EscapeDataString(returnUrl)}";
+
+        // Navegación cliente (sin recargar)
+        Nav.NavigateTo(target, forceLoad: false);
+        return Task.CompletedTask;
+    }
+}
+ *@
+
+
+
+@inject NavigationManager Nav
+<MudProgressCircular Indeterminate="true" Class="m-4" />
+
+@code {
+    bool _navigated;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _navigated) return;
+        _navigated = true;
+
+        // Si ya estamos en /Ingreso, no hagas nada
+        var uri = Nav.Uri ?? string.Empty;
+        if (uri.Contains("/Ingreso", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // Calcula returnUrl relativo
+        var rel = Nav.ToBaseRelativePath(uri);
+        var returnUrl = "/" + (string.IsNullOrWhiteSpace(rel) ? "" : rel);
+
+        // En WebView, navega después de ceder el hilo para evitar pantalla en blanco
+        await Task.Yield();
+        await InvokeAsync(() =>
+            Nav.NavigateTo($"/Ingreso?returnUrl={Uri.EscapeDataString(returnUrl)}", false)
+        );
+    }
+}

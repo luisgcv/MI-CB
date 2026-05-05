@@ -1,0 +1,400 @@
+﻿@page "/Registro"
+@using CbEnLinea.Api.Common.Enums
+@using MudBlazor
+@using CbEnLinea.Api.Common.Dtos
+@using MauiStore.Shared.Services
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+
+@inject IAuthService Auth
+@inject NavigationManager Nav
+
+
+<EditForm Model="@model" OnValidSubmit="@HandleRegister">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <MudCard Elevation="0" Class="cb-card">
+        <MudCardContent>
+                    <MudText Typo="Typo.h6" Style="font-weight:600;">Crear cuenta</MudText>
+                    <MudText Class="mb-5" Typo="Typo.body2">Ingrese sus datos para registrarse</MudText>
+                   
+                    <!-- Identification -->
+                    <MudSelect T="IdentificationTypes?"
+                               @bind-Value="model.IdentificationType"
+                               Label="Tipo de identificación"
+                               Variant="Variant.Filled"
+                               Margin="Margin.Dense"
+                               Required="true"
+                               RequiredError="Seleccione un tipo"
+                               Adornment="Adornment.Start"
+                               AdornmentColor="Color.Primary"
+                               AdornmentIcon="@Icons.Material.Outlined.Badge">
+                        <MudSelectItem T="IdentificationTypes?"
+                                       Disabled="true"
+                                       Value="@(default(IdentificationTypes?))">
+                            Select Identification Type
+                        </MudSelectItem>
+                        <MudSelectItem T="IdentificationTypes?" Value="@( (IdentificationTypes?) IdentificationTypes.Physical )">Fisico</MudSelectItem>
+                        <MudSelectItem T="IdentificationTypes?" Value="@( (IdentificationTypes?) IdentificationTypes.Legal )">Juridico</MudSelectItem>
+                        <MudSelectItem T="IdentificationTypes?" Value="@( (IdentificationTypes?) IdentificationTypes.Dimex )">Dimex</MudSelectItem>
+                        <MudSelectItem T="IdentificationTypes?" Value="@( (IdentificationTypes?) IdentificationTypes.Other )">Otro</MudSelectItem>
+                    </MudSelect>
+
+                    <MudTextField @bind-Value="model.IdentificationNumber"
+                                  Class="mt-3"
+                                  Label="Número de identificación"
+                                  Variant="Variant.Filled"
+                                  Margin="Margin.Dense"
+                                  Required="true"
+                                  Adornment="Adornment.Start"
+                                  AdornmentColor="Color.Primary"
+                                  AdornmentIcon="@Icons.Material.Outlined.Fingerprint" />
+
+                    <MudTextField @bind-Value="model.Password"
+                                  Class="mt-3"
+                                  Label="Contraseña"
+                                  Variant="Variant.Filled"
+                                  Margin="Margin.Dense"
+                                  InputType="InputType.Password"
+                                  Required="true"
+                                  Adornment="Adornment.Start"
+                                  AdornmentColor="Color.Primary"
+                                  AdornmentIcon="@Icons.Material.Outlined.Lock" />
+
+                    <!-- Account credentials -->
+                    <MudTextField @bind-Value="model.Email"
+                                  Class="mt-3"
+                                  Label="Correo"
+                                  Variant="Variant.Filled"
+                                  Margin="Margin.Dense"
+                                  Required="true"
+                                  Adornment="Adornment.Start"
+                                  AdornmentColor="Color.Primary"
+                                  AdornmentIcon="@Icons.Material.Outlined.Email" />
+
+                    <!-- Names -->
+                    <MudTextField @bind-Value="model.Firstname"
+                                  Class="mt-3"
+                                  Label="Nombre"
+                                  Variant="Variant.Filled"
+                                  Margin="Margin.Dense"
+                                  Adornment="Adornment.Start"
+                                  AdornmentColor="Color.Primary"
+                                  AdornmentIcon="@Icons.Material.Outlined.Person" />
+
+                    <MudTextField @bind-Value="model.Lastname"
+                                  Class="mt-3"
+                                  Label="Apellido"
+                                  Variant="Variant.Filled"
+                                  Margin="Margin.Dense"
+                                  Adornment="Adornment.Start"
+                                  AdornmentColor="Color.Primary"
+                                  AdornmentIcon="@Icons.Material.Outlined.PersonOutline" />
+
+                    <!-- Phones -->
+                    <MudTextField @bind-Value="model.MobilePhone"
+                                  Class="mt-3"
+                                  Label="Teléfono móvil"
+                                  Variant="Variant.Filled"
+                                  Margin="Margin.Dense"
+                                  Required="true"
+                                  Adornment="Adornment.Start"
+                                  AdornmentColor="Color.Primary"
+                                  AdornmentIcon="@Icons.Material.Outlined.PhoneIphone" />
+
+                    <MudTextField @bind-Value="model.Phone"
+                                  Class="mt-3"
+                                  Label="Teléfono (opcional)"
+                                  Variant="Variant.Filled"
+                                  Margin="Margin.Dense"
+                                  Adornment="Adornment.Start"
+                                  AdornmentColor="Color.Primary"
+                                  AdornmentIcon="@Icons.Material.Outlined.Phone" />
+
+                    <!-- Address (Cascading dropdowns) -->
+                    <MudSelect T="Guid?" @bind-Value="ProvinceIdBind"
+                               Label="Provincia"
+                               Variant="Variant.Filled"
+                               Margin="Margin.Dense"
+                               Required="true"
+                               RequiredError="Seleccione una provincia"
+                               Disabled="@loadingProvinces"
+                               Adornment="Adornment.Start"
+                               AdornmentColor="Color.Primary"
+                               AdornmentIcon="@Icons.Material.Outlined.LocationCity">
+                        <MudSelectItem T="Guid?" Disabled="true" Value="@(default(Guid?))">Seleccione una provincia</MudSelectItem>
+                        @foreach (var p in provinces)
+                        {
+                            <MudSelectItem T="Guid?" Value="p.Id">@p.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudSelect T="Guid?" @bind-Value="CantonIdBind"
+                               Class="mt-3"
+                               Label="Cantón"
+                               Variant="Variant.Filled"
+                               Margin="Margin.Dense"
+                               Required="true"
+                               RequiredError="Seleccione un cantón"
+                               Disabled="@(!model.ProvinceId.HasValue || loadingCantons)"
+                               @key="model.ProvinceId"
+                               Adornment="Adornment.Start"
+                               AdornmentColor="Color.Primary"
+                               AdornmentIcon="@Icons.Material.Outlined.Domain">
+                        <MudSelectItem T="Guid?" Disabled="true" Value="@(default(Guid?))">Seleccione un cantón</MudSelectItem>
+                        @foreach (var c in cantons)
+                        {
+                            <MudSelectItem T="Guid?" Value="c.Id">@c.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudSelect T="Guid?" @bind-Value="model.DistrictId"
+                               Class="mt-3"
+                               Label="Distrito"
+                               Variant="Variant.Filled"
+                               Margin="Margin.Dense"
+                               Required="true"
+                               RequiredError="Seleccione un distrito"
+                               Disabled="@(!model.CantonId.HasValue || loadingDistricts)"
+                               @key="model.CantonId"
+                               Adornment="Adornment.Start"
+                               AdornmentColor="Color.Primary"
+                               AdornmentIcon="@Icons.Material.Outlined.PinDrop">
+                        <MudSelectItem T="Guid?" Disabled="true" Value="@(default(Guid?))">Seleccione un distrito</MudSelectItem>
+                        @foreach (var d in districts)
+                        {
+                            <MudSelectItem T="Guid?" Value="d.Id">@d.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudTextField @bind-Value="model.Neighborhood"
+                                  Class="mt-3"
+                                  Label="Barrio"
+                                  Variant="Variant.Filled"
+                                  Margin="Margin.Dense"
+                                  Adornment="Adornment.Start"
+                                  AdornmentColor="Color.Primary"
+                                  AdornmentIcon="@Icons.Material.Outlined.Home" />
+
+                    <MudTextField @bind-Value="model.AddressOtherInfo"
+                                  Class="mt-3"
+                                  Label="Detalles de la dirección"
+                                  Variant="Variant.Filled"
+                                  Margin="Margin.Dense"
+                                  Adornment="Adornment.Start"
+                                  AdornmentColor="Color.Primary"
+                                  AdornmentIcon="@Icons.Material.Outlined.Notes" />
+
+                    <!-- Electronic invoice -->
+                    <MudSwitch T="bool"
+                               @bind-Checked="model.ElectronicInvoiceRequired"
+                               Class="mt-4"
+                               Color="Color.Primary"
+                               Label="Requiero factura electrónica" />
+
+                    <MudButton Disabled="@loading" Class="my-4 py-2 rounded-lg"
+                               Color="Color.Primary" FullWidth="true" Variant="Variant.Filled"
+                               ButtonType="ButtonType.Submit">
+                        @(loading ? "Registrando..." : "Registrarse")
+                    </MudButton>
+
+                    @if (!string.IsNullOrWhiteSpace(error))
+                    {
+                        <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2">@error</MudAlert>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(success))
+                    {
+                        <MudAlert Severity="Severity.Success" Dense="true" Class="mt-2">@success</MudAlert>
+                    }
+
+                    <MudDivider Class="my-3" />
+
+                </MudCardContent>
+    </MudCard>
+</EditForm>
+
+
+
+
+
+
+@code {
+    private readonly RegisterVm model = new() { ElectronicInvoiceRequired = false };
+
+    // dropdown sources
+    private List<DropdownItemDto> provinces = new();
+    private List<DropdownItemDto> cantons = new();
+    private List<DropdownItemDto> districts = new();
+
+    // loading flags
+    private bool loading;
+    private bool loadingProvinces;
+    private bool loadingCantons;
+    private bool loadingDistricts;
+
+    private string? error;
+    private string? success;
+
+    protected override async Task OnInitializedAsync()
+    {
+       
+    }
+
+    private Guid? ProvinceIdBind
+    {
+        get => model.ProvinceId;
+        set
+        {
+            if (model.ProvinceId == value) return;
+
+            model.ProvinceId = value;
+
+            // Reset dependents immediately
+            model.CantonId = null;
+            model.DistrictId = null;
+            cantons.Clear();
+            districts.Clear();
+
+            if (value.HasValue)
+            {
+                loadingCantons = true;            // show disabled immediately
+                _ = InvokeAsync(StateHasChanged);  // force UI refresh now
+            }
+            else
+            {
+                loadingCantons = false;
+            }
+        }
+    }
+
+    private Guid? CantonIdBind
+    {
+        get => model.CantonId;
+        set
+        {
+            if (model.CantonId == value) return;
+
+            model.CantonId = value;
+
+            // Reset dependent
+            model.DistrictId = null;
+            districts.Clear();
+
+            if (value.HasValue)
+            {
+                loadingDistricts = true;
+                _ = InvokeAsync(StateHasChanged);
+            }
+            else
+            {
+                loadingDistricts = false;
+            }
+        }
+    }
+
+    // ----- Submit -----
+    private async Task HandleRegister()
+    {
+        error = null;
+        success = null;
+        loading = true;
+
+        if (model.IdentificationType is null)
+        {
+            loading = false;
+            error = "Seleccione un tipo de identificación.";
+            return;
+        }
+
+        if (!model.ProvinceId.HasValue || !model.CantonId.HasValue || !model.DistrictId.HasValue)
+        {
+            loading = false;
+            error = "Seleccione provincia, cantón y distrito.";
+            return;
+        }
+
+        var req = new RegisterRequest
+            {
+                Email = model.Email?.Trim() ?? "",
+                Password = model.Password?.Trim() ?? "",
+                Firstname = string.IsNullOrWhiteSpace(model.Firstname) ? null : model.Firstname!.Trim(),
+                Lastname = string.IsNullOrWhiteSpace(model.Lastname) ? null : model.Lastname!.Trim(),
+                IssueJwt = true,
+
+                IdentificationType = model.IdentificationType.Value,
+                IdentificationNumber = model.IdentificationNumber?.Trim() ?? "",
+
+                MobilePhone = model.MobilePhone?.Trim() ?? "",
+                Phone = string.IsNullOrWhiteSpace(model.Phone) ? null : model.Phone!.Trim(),
+
+                ProvinceId = model.ProvinceId!.Value,
+                CantonId = model.CantonId!.Value,
+                DistrictId = model.DistrictId!.Value,
+
+                Neighborhood = string.IsNullOrWhiteSpace(model.Neighborhood) ? null : model.Neighborhood!.Trim(),
+                AddressOtherInfo = string.IsNullOrWhiteSpace(model.AddressOtherInfo) ? null : model.AddressOtherInfo!.Trim(),
+
+                ElectronicInvoiceRequired = model.ElectronicInvoiceRequired,
+                CaptchaToken = "TEST"
+            };
+
+        var (ok, err, resp) = await Auth.RegisterAsync(req);
+        loading = false;
+
+        if (ok)
+        {
+            success = "Su cuenta se ha creado correctamente.";
+            await InvokeAsync(StateHasChanged);
+
+            var target = string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl!;
+            Nav.NavigateTo(target, forceLoad: false);
+        }
+        else
+        {
+            error = err ?? "No se pudo completar el registro.";
+        }
+    }
+
+    // Optional return URL (?returnUrl=/ruta)
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    // ----- VM -----
+    private sealed class RegisterVm
+    {
+        // Credentials
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+
+        // Names
+        public string? Firstname { get; set; }
+        public string? Lastname { get; set; }
+
+        // Identification
+        [Required(ErrorMessage = "Seleccione un tipo de identificación")]
+        public IdentificationTypes? IdentificationType { get; set; } = null;
+        public string IdentificationNumber { get; set; } = "";
+
+        // Phones
+        public string MobilePhone { get; set; } = "";
+        public string? Phone { get; set; }
+
+        // Address (Guid selections)
+        [Required(ErrorMessage = "Seleccione una provincia")]
+        public Guid? ProvinceId { get; set; }
+
+        [Required(ErrorMessage = "Seleccione un cantón")]
+        public Guid? CantonId { get; set; }
+
+        [Required(ErrorMessage = "Seleccione un distrito")]
+        public Guid? DistrictId { get; set; }
+
+        public string? Neighborhood { get; set; }
+        public string? AddressOtherInfo { get; set; }
+
+        // Invoice and Captcha
+        public bool ElectronicInvoiceRequired { get; set; }
+    }
+}

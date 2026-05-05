@@ -1,0 +1,89 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>icono.ico</ApplicationIcon>
+    <Title>Mi CB</Title>
+    <PackageIcon>iconoapp216-1.png</PackageIcon>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Pages\Compras\**" />
+    <Compile Remove="Pages\Encuestas\**" />
+    <Compile Remove="Pages\Noticias\**" />
+    <Compile Remove="Pages\PLANTILLAS\**" />
+    <Compile Remove="Pages\SAC\**" />
+    <Compile Remove="Pages\Sorteos\**" />
+    <Compile Remove="Pages\Tienda\**" />
+    <Compile Remove="Pages\Varias\**" />
+    <Content Remove="Pages\Compras\**" />
+    <Content Remove="Pages\Encuestas\**" />
+    <Content Remove="Pages\Noticias\**" />
+    <Content Remove="Pages\PLANTILLAS\**" />
+    <Content Remove="Pages\SAC\**" />
+    <Content Remove="Pages\Sorteos\**" />
+    <Content Remove="Pages\Tienda\**" />
+    <Content Remove="Pages\Varias\**" />
+    <EmbeddedResource Remove="Pages\Compras\**" />
+    <EmbeddedResource Remove="Pages\Encuestas\**" />
+    <EmbeddedResource Remove="Pages\Noticias\**" />
+    <EmbeddedResource Remove="Pages\PLANTILLAS\**" />
+    <EmbeddedResource Remove="Pages\SAC\**" />
+    <EmbeddedResource Remove="Pages\Sorteos\**" />
+    <EmbeddedResource Remove="Pages\Tienda\**" />
+    <EmbeddedResource Remove="Pages\Varias\**" />
+    <None Remove="Pages\Compras\**" />
+    <None Remove="Pages\Encuestas\**" />
+    <None Remove="Pages\Noticias\**" />
+    <None Remove="Pages\PLANTILLAS\**" />
+    <None Remove="Pages\SAC\**" />
+    <None Remove="Pages\Sorteos\**" />
+    <None Remove="Pages\Tienda\**" />
+    <None Remove="Pages\Varias\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Pages\PRUEBAS.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="icono.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\iconoapp216-1.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="9.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.11" />
+    <PackageReference Include="MudBlazor" Version="8.3.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Views\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="CbEnLinea.Api.Common">
+      <HintPath>..\ExternalDlls\CbEnLinea.Api.Common.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
