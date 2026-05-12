@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.13.35828.75
+# Visual Studio Version 18
+VisualStudioVersion = 18.5.11723.231 stable
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiStore", "MauiStore\MauiStore\MauiStore.csproj", "{E20592A0-878E-4DAC-B60F-621C34D48FAC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiStore", "Frontend\MauiStore\MauiStore\MauiStore.csproj", "{959324CE-7A81-901F-C104-997D30ECF389}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiStore.Shared", "MauiStore\MauiStore.Shared\MauiStore.Shared.csproj", "{772C0334-C4A2-4DE9-A3C4-CAB60055CAB0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiStore.Shared", "Frontend\MauiStore\MauiStore.Shared\MauiStore.Shared.csproj", "{457FA65E-B688-71D7-F8E9-A155F7047152}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiStore.Web", "MauiStore\MauiStore.Web\MauiStore.Web.csproj", "{06B9BCAD-3E85-4C36-B579-216A1263580C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiStore.Web", "Frontend\MauiStore\MauiStore.Web\MauiStore.Web.csproj", "{2A9D0094-62EF-201D-4058-159D13B48F55}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppProveedoresAPI", "Backend\AppProveedoresAPI\AppProveedoresAPI.csproj", "{F68ACAD6-C997-3B8E-2430-0C6BC3755118}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,20 +17,23 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E20592A0-878E-4DAC-B60F-621C34D48FAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E20592A0-878E-4DAC-B60F-621C34D48FAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E20592A0-878E-4DAC-B60F-621C34D48FAC}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{E20592A0-878E-4DAC-B60F-621C34D48FAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E20592A0-878E-4DAC-B60F-621C34D48FAC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E20592A0-878E-4DAC-B60F-621C34D48FAC}.Release|Any CPU.Deploy.0 = Release|Any CPU
-		{772C0334-C4A2-4DE9-A3C4-CAB60055CAB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{772C0334-C4A2-4DE9-A3C4-CAB60055CAB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{772C0334-C4A2-4DE9-A3C4-CAB60055CAB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{772C0334-C4A2-4DE9-A3C4-CAB60055CAB0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{06B9BCAD-3E85-4C36-B579-216A1263580C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{06B9BCAD-3E85-4C36-B579-216A1263580C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{06B9BCAD-3E85-4C36-B579-216A1263580C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{06B9BCAD-3E85-4C36-B579-216A1263580C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{959324CE-7A81-901F-C104-997D30ECF389}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{959324CE-7A81-901F-C104-997D30ECF389}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{959324CE-7A81-901F-C104-997D30ECF389}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{959324CE-7A81-901F-C104-997D30ECF389}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{959324CE-7A81-901F-C104-997D30ECF389}.Release|Any CPU.Build.0 = Release|Any CPU
+		{457FA65E-B688-71D7-F8E9-A155F7047152}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{457FA65E-B688-71D7-F8E9-A155F7047152}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{457FA65E-B688-71D7-F8E9-A155F7047152}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{457FA65E-B688-71D7-F8E9-A155F7047152}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A9D0094-62EF-201D-4058-159D13B48F55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A9D0094-62EF-201D-4058-159D13B48F55}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A9D0094-62EF-201D-4058-159D13B48F55}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A9D0094-62EF-201D-4058-159D13B48F55}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F68ACAD6-C997-3B8E-2430-0C6BC3755118}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F68ACAD6-C997-3B8E-2430-0C6BC3755118}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F68ACAD6-C997-3B8E-2430-0C6BC3755118}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F68ACAD6-C997-3B8E-2430-0C6BC3755118}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
