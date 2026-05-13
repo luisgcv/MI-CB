@@ -1,15 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.5.11723.231 stable
+VisualStudioVersion = 18.5.11723.231
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiStore", "Frontend\MauiStore\MauiStore\MauiStore.csproj", "{959324CE-7A81-901F-C104-997D30ECF389}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiStore.Shared", "Frontend\MauiStore\MauiStore.Shared\MauiStore.Shared.csproj", "{457FA65E-B688-71D7-F8E9-A155F7047152}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiStore.Web", "Frontend\MauiStore\MauiStore.Web\MauiStore.Web.csproj", "{2A9D0094-62EF-201D-4058-159D13B48F55}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppProveedoresAPI", "Backend\AppProveedoresAPI\AppProveedoresAPI.csproj", "{F68ACAD6-C997-3B8E-2430-0C6BC3755118}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,10 +28,6 @@ Global
 		{2A9D0094-62EF-201D-4058-159D13B48F55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2A9D0094-62EF-201D-4058-159D13B48F55}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2A9D0094-62EF-201D-4058-159D13B48F55}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F68ACAD6-C997-3B8E-2430-0C6BC3755118}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F68ACAD6-C997-3B8E-2430-0C6BC3755118}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F68ACAD6-C997-3B8E-2430-0C6BC3755118}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F68ACAD6-C997-3B8E-2430-0C6BC3755118}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

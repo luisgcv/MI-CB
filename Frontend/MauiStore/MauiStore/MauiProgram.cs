@@ -48,7 +48,7 @@ public static class MauiProgram
 
         // Storage de token para MAUI (usa SecureStorage)
         builder.Services.AddScoped<ITokenStorageService, MauiTokenStorageService>();
-        builder.Services.AddScoped<IPurchasePreferenceManager, PurchasePreferenceManager>();
+       // builder.Services.AddScoped<IPurchasePreferenceManager, PurchasePreferenceManager>();
       /*  builder.Services.AddScoped<StoresService>();
         builder.Services.AddScoped<CategoriesService>();
         builder.Services.AddScoped<ProductsService>();

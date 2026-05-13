@@ -1,0 +1,131 @@
+@page "/home"
+@using MudBlazor
+@using MauiStore.Shared.Services
+@using Microsoft.AspNetCore.Components
+@inject IAuthService Auth
+@inject NavigationManager Nav
+
+<style>
+    /* Permitir scroll dentro de la tarjeta */
+    .scrollable-card {
+        max-height: 85vh;
+        overflow-y: auto;
+        padding-right: 8px;
+    }
+
+        .scrollable-card::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollable-card::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .scrollable-card::-webkit-scrollbar-thumb {
+            background: #46a441;
+            border-radius: 10px;
+        }
+    /* Para mejorar el efecto hover de las tarjetas */
+    .menu-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        height: 100%;
+    }
+
+        .menu-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+</style>
+
+<div class="cbpeq-card scrollable-card">
+    <MudCardContent>
+        <!-- Logo y bienvenida -->
+        <div class="d-flex flex-column align-center text-center mb-6">
+            <MudImage Src="/images/logoSuper.png"
+                      Alt="Compre Bien en línea"
+                      Height="80"
+                      Class="mb-4 logo" />
+            <MudText Typo="Typo.h4" Color="Color.Primary" Class="font-weight-bold gotham-bold">
+                ¡Bienvenido, @UserName!
+            </MudText>
+            <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mt-1">
+                ¿Qué deseas hacer hoy?
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
+                Selecciona una opción para continuar.
+            </MudText>
+        </div>
+
+        <!-- Grid de opciones -->
+        <MudGrid Justify="Justify.Center" Spacing="4">
+            @foreach (var menuItem in MenuItems)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Elevation="2"
+                             Class="menu-card rounded-lg"
+                             @onclick="() => NavigateTo(menuItem.Route)">
+                        <MudCardContent>
+                            <div class="d-flex flex-column align-center text-center">
+                                <MudIcon Icon="@menuItem.Icon"
+                                         Size="Size.Large"
+                                         Color="Color.Primary"
+                                         Class="mb-3" />
+                                <MudText Typo="Typo.h6" Class="font-weight-bold mb-2">
+                                    @menuItem.Title
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    @menuItem.Description
+                                </MudText>
+                                <MudIcon Icon="@Icons.Material.Filled.ArrowForward"
+                                         Size="Size.Small"
+                                         Color="Color.Primary"
+                                         Class="mt-3" />
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+
+        <!-- Botón de cerrar sesión -->
+        <div class="d-flex justify-center mt-8">
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Error"
+                       StartIcon="@Icons.Material.TwoTone.Logout"
+                       OnClick="Logout">
+                Cerrar sesión
+            </MudButton>
+        </div>
+    </MudCardContent>
+</div>
+
+@code {
+    private string UserName = "Juan";
+
+    private List<MenuItem> MenuItems = new()
+    {
+        new() { Title = "Artículos", Description = "Crear solicitudes y gestionar información de artículos", Icon = Icons.Material.TwoTone.Inventory, Route = "/articulos" },
+        new() { Title = "Órdenes de compra", Description = "Consulta tus órdenes de compra y su estado", Icon = Icons.Material.TwoTone.ShoppingCart, Route = "/ordenes-compra" },
+        new() { Title = "Pagos", Description = "Consulta tu estado de cuenta, pagos y pendientes", Icon = Icons.Material.TwoTone.Payment, Route = "/pagos" },
+        new() { Title = "Contratos", Description = "Consulta y descarga tus contratos asignados", Icon = Icons.Material.TwoTone.Description, Route = "/contratos" },
+        new() { Title = "Reuniones", Description = "Solicita y consulta tus reuniones con el equipo", Icon = Icons.Material.TwoTone.CalendarToday, Route = "/reuniones" },
+        new() { Title = "Dinámicas comerciales", Description = "Consulta dinámicas activas y resultados", Icon = Icons.Material.TwoTone.Leaderboard, Route = "/dinamicas" }
+    };
+
+    private void NavigateTo(string route) => Nav.NavigateTo(route);
+    private async Task Logout()
+    {
+        await Auth.LogoutAsync();
+        Nav.NavigateTo("/Ingreso", forceLoad: true); // Ajusta según tu ruta de login
+    }
+
+    private class MenuItem
+    {
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public string Route { get; set; } = "";
+    }
+}
