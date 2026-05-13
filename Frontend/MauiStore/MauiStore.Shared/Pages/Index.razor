@@ -1,48 +1,123 @@
 ﻿@page "/"
-
-@using Microsoft.AspNetCore.Components.Authorization
+@using MudBlazor
+@using CbEnLinea.Api.Common.Dtos
+@using MauiStore.Shared.Services
+@using MauiStore.Web.Services
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@inject IAuthService Auth
 @inject NavigationManager Nav
 
-<MudCard Elevation="0" Class="cbpeq-card"> 
-    <MudCardContent>
-                    <MudImage Src="/images/logoSuper.png"
-                              Alt="Compre Bien en línea"
-                              Class="mb-4 logo" />
 
-                    <MudDivider Class="my-3" />
+<EditForm Model="@model" OnValidSubmit="@HandleLogin">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <MudCard Elevation="0" Class="cbpeq-card">
+        <MudCardContent>
+            <MudImage Src="/images/logoSuper.png"
+                      Alt="Compre Bien en línea"
+                      Class="mb-4 logo" />
+            <MudText>
+                <strong>Identificación</strong>
+            </MudText>
+            <MudTextField @bind-Value="model.Identifier"
+                          Class="mt-6"
+                          Variant="Variant.Filled"
+                          Margin="Margin.Dense"
+                          AdornmentColor="Color.Primary" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.TwoTone.AccountCircle" Required="true" />
 
-                    <MudText Align="Align.Center">
-                        Bienvenido (a) a <strong>NOMBRE APP</strong>
-                    </MudText>
+            <!-- Contraseña -->
+            <MudText>
+                <strong>Contraseña</strong>
+            </MudText>
+            <MudTextField @bind-Value="model.Password"
+                          Class="mt-6"
+                          Variant="Variant.Filled"
+                          Margin="Margin.Dense"
+                          AdornmentColor="Color.Primary" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.TwoTone.Lock"
+                          InputType="InputType.Password" Required="true" />
 
-                    <MudDivider Class="my-3" />
-
-            <AuthorizeView>
-            <Authorized>
-
-            </Authorized>
-            <NotAuthorized>
-                @* Crear cuenta *@
-                <MudButton Class="my-2 py-2 rounded-lg"
-                           Color="Color.Primary" FullWidth="true" Variant="Variant.Filled"
-                           OnClick="@goToRegistrarme">
-                    Crear cuenta
+            <!-- Olvido la contraseña -->
+            <div class="d-flex justify-end">
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Disabled="@loading" OnClick="@goToForgot">
+                    ¿Olvidaste tu contraseña?
                 </MudButton>
+            </div>
 
-                <!-- Ingresar -->
-                <MudButton Class="my-2 py-2 rounded-lg"
-                           Color="Color.Primary" FullWidth="true" Variant="Variant.Filled"
-                           OnClick="@goToIniciarSesion">
-                    Ingresar
-                </MudButton>
-            </NotAuthorized>
-        </AuthorizeView>
-       </MudCardContent>
-</MudCard>
+            <MudButton Disabled="@loading" Class="my-4 py-2 rounded-lg"
+                       Color="Color.Primary" FullWidth="true" Variant="Variant.Filled"
+                       ButtonType="ButtonType.Submit">
+                @(loading ? "Ingresando..." : "Ingresar")
+            </MudButton>
 
+            @if (!string.IsNullOrWhiteSpace(error))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2">@error</MudAlert>
+            }
 
-@code 
-{
-    private void goToRegistrarme() => Nav.NavigateTo("/Registrarse");
-    private void goToIniciarSesion() => Nav.NavigateTo("/Ingreso");
+        </MudCardContent>
+    </MudCard>
+</EditForm>
+
+@code {
+    private readonly LoginVm model = new();
+
+    private bool loading;
+    private string? error;
+
+    private void goToForgot() => Nav.NavigateTo("/Olvide");
+    private void goToInvitado() => Nav.NavigateTo("/Tienda/TiendaPrincipal");
+
+    private async Task HandleLogin()
+    {
+        error = null;
+        loading = true;
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+
+            var (ok, err, token) = await Auth.LoginAsync(
+                identifier: model.Identifier?.Trim() ?? "",
+                password: model.Password?.Trim() ?? "",
+                ct: cts.Token
+            );
+
+            if (ok)
+            {
+                await InvokeAsync(StateHasChanged);
+                var target = string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl!;
+                Nav.NavigateTo(target, forceLoad: false);
+            }
+            else
+            {
+                error = string.IsNullOrWhiteSpace(err)
+                    ? "Usuario o contraseña inválidos."
+                    : err;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            error = "La solicitud tardó demasiado (timeout después de 20 segundos).";
+        }
+        catch (Exception ex)
+        {
+            error = $"Error inesperado: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    private sealed class LoginVm
+    {
+        public string Identifier { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
 }

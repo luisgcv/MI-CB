@@ -76,7 +76,6 @@ builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<ITokenStorageService, TokenStorageService>();   // Token storage (localStorage vía JS)
 builder.Services.AddScoped<JwtAuthStateProvider>();                        // Auth state basado en JWT
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<JwtAuthStateProvider>());
-builder.Services.AddScoped<IPurchasePreferenceManager, PurchasePreferenceManager>();
 
 // Handler que agrega Authorization: Bearer <token>
 builder.Services.AddTransient<AuthHeaderHandler>();

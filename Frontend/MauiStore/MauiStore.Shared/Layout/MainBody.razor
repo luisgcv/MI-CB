@@ -143,23 +143,7 @@
 </style>
 
 <MudLayout>
-    <MudAppBar Elevation="0" Style="background-color:#46a441">
-        @if (_navigationManager.Uri.Substring(_navigationManager.BaseUri.Length) != "")
-        {
-            <!-- Botón de atrás -->
-            <MudIconButton Href="back" Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Inherit" Edge="Edge.Start" />
-        }
-        else
-        {
-            <!-- Logo cuando NO hay atrás -->
-            <MudImage Src="/images/LogoHorizontal.png" Alt="Logo" Style="height:40px; margin-left:8px;" />
-        }
-        <MudSpacer />
-
-        <!-- Íconos a la derecha SIEMPRE -->
-        <MudIconButton Icon="@Icons.Material.TwoTone.Notifications" Color="Color.Inherit" />
-        <MudIconButton Icon="@Icons.Material.TwoTone.Menu" Color="Color.Inherit" OnClick="@((e) => DrawerToggle())" />
-    </MudAppBar>
+    <!-- Barra superior eliminada: MudAppBar removido -->
 
     <MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.Left" Class="" Variant="@DrawerVariant.Temporary" ClipMode="DrawerClipMode.Never">
         <MudDrawerHeader Class="px-0 py-5">
@@ -178,33 +162,41 @@
         <MudContainer MaxWidth="MaxWidth.Large" Class="mt-5 mb-15 pt-0 pb-8">
             <div class="page-bg">
                 <div class="screen-center">
-                    @* <MudGrid>
-                        <MudItem xs="12"> *@
                     @ChildContent
-
-                    @* </MudItem>
-                    </MudGrid> *@
                 </div>
             </div>
         </MudContainer>
 
         <div class="my-5"></div>
 
-        <BottomNavMenu>
-            <!-- Inicio -->
-            <BottomNavMenuItem Href="/" Icon="@Icons.Material.TwoTone.Cottage" IconColor="Color.Success" Title="Inicio" />
-
-            <!-- Perfil -->
-            <AuthorizeView>
-                <Authorized>
-                    <BottomNavMenuItem Href="Configuracion/MiPerfil" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.PersonOutline" IconColor="Color.Success" Title="Mi perfil"></BottomNavMenuItem>
-                </Authorized>
-                <NotAuthorized>
-                    <BottomNavMenuItem Href="/Ingreso?returnUrl=%2F" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.PersonOutline" IconColor="Color.Success" Title="Ingresar"></BottomNavMenuItem>
-                </NotAuthorized>
-            </AuthorizeView>
-
-        </BottomNavMenu>
+        @code {
+    private bool ShowBottomNav
+    {
+        get
+        {
+            var rel = _navigationManager.Uri.Substring(_navigationManager.BaseUri.Length).Split('?')[0].Trim('/');
+            rel = rel.ToLowerInvariant();
+            // Ajusta las rutas donde quieras ocultar la barra (ej. "g" es la de Login)
+            return rel != "g" && !rel.StartsWith("ingreso");
+        }
+    }
+}
+@if (ShowBottomNav)
+{
+    <BottomNavMenu>
+        <!-- Inicio -->
+        <BottomNavMenuItem Href="/" Icon="@Icons.Material.TwoTone.Cottage" IconColor="Color.Success" Title="Inicio" />
+        <!-- Perfil -->
+        <AuthorizeView>
+            <Authorized>
+                <BottomNavMenuItem Href="Configuracion/MiPerfil" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.PersonOutline" IconColor="Color.Success" Title="Mi perfil"></BottomNavMenuItem>
+            </Authorized>
+            <NotAuthorized>
+                <BottomNavMenuItem Href="/Ingreso?returnUrl=%2F" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.PersonOutline" IconColor="Color.Success" Title="Ingresar"></BottomNavMenuItem>
+            </NotAuthorized>
+        </AuthorizeView>
+    </BottomNavMenu>
+}
     </MudMainContent>
 </MudLayout>
 

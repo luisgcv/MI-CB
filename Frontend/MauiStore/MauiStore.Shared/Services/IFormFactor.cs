@@ -1,4 +1,3 @@
-using MauiStore.Data;
 using System.Net.Http.Json;
 
 namespace MauiStore.Shared.Services
@@ -18,10 +17,5 @@ namespace MauiStore.Shared.Services
             _http = http;
         }
 
-        public async Task<List<Post>> GetPostsAsync()
-        {
-            var posts = await _http.GetFromJsonAsync<List<Post>>("posts");
-            return posts ?? new List<Post>();
-        }
     }
 }

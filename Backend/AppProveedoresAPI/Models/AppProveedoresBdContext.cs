@@ -81,7 +81,8 @@ public partial class AppProveedoresBdContext : DbContext
 
     public virtual DbSet<TblProvUnidadesMedidum> TblProvUnidadesMedida { get; set; }
 
-    public virtual DbSet<TblProvUsuario> TblProvUsuarios { get; set; }
+    public virtual DbSet<TblProvUsuario> TblProvUsuarios { get; set; } = null!;
+    public virtual DbSet<TblProvUsuariosInformacion> TblProvUsuariosInformacion { get; set; } = null!;set; } = null!;
 
     public virtual DbSet<TblProvUsuariosInformacion> TblProvUsuariosInformacions { get; set; }
 

@@ -7,13 +7,13 @@ public partial class TblProvUsuario
 {
     public string IdIdentificacion { get; set; } = null!;
 
-    public string Contraseña { get; set; } = null!;
+    public string Contrasena { get; set; } = null!;
 
     public string? IpUltimoAcceso { get; set; }
 
     public DateTime? UltimoInicioSesion { get; set; }
 
-    public DateTime? UltimoCambioContraseña { get; set; }
+    public DateTime? UltimoCambioContrasena { get; set; }
 
     public virtual ICollection<TblProvBitacoraSesion> TblProvBitacoraSesions { get; set; } = new List<TblProvBitacoraSesion>();
 
