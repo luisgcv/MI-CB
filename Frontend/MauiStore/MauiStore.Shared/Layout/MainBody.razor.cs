@@ -11,6 +11,6 @@ namespace MauiStore.Shared
 {
     public partial class MainBody
     {
-        
+
     }
 }

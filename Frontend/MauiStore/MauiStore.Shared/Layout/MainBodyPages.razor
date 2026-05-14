@@ -1,0 +1,99 @@
+@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager _navigationManager
+@inject IJSRuntime _jsRuntime
+
+<MudLayout>
+    <MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.Left" Class="" Variant="@DrawerVariant.Temporary" ClipMode="DrawerClipMode.Never">
+        <MudDrawerHeader Class="px-0 py-5">
+            <MudCard Elevation="0" Class="pa-0" Square="true" Style="background-color: transparent; width: 100%;">
+                <MudCardContent Class="pt-3">
+                    <BrandLogo />
+                    <MudDivider Class="mt-2" />
+                </MudCardContent>
+            </MudCard>
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent Class="pt-0" Style="background-color: #fdf5e6; min-height: 100vh; display: flex; flex-direction: column;">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="pa-0 flex-grow-1" Style="display: flex; flex-direction: column;">
+            <div class="d-flex justify-space-between align-center px-4" style="padding-top: 8px;">
+                <MudIconButton Icon="@Icons.Material.Filled.Menu" 
+                               Color="Color.Default" 
+                               Size="Size.Large"
+                               OnClick="DrawerToggle" />
+
+                <MudIconButton Icon="@Icons.Material.TwoTone.AccountCircle" 
+                               Color="Color.Default" 
+                               Size="Size.Large" 
+                               Href="/Configuracion/MiPerfil" />
+            </div>
+            
+            <!-- Contenido principal que ocupa todo el espacio disponible -->
+            <div style="flex: 1;">
+                @ChildContent
+            </div>
+        </MudContainer>
+
+        @if (ShowBottomNav)
+        {
+            <div style="margin-top: auto;">
+                <BottomNavMenu>
+                    <BottomNavMenuItem Href="/" Icon="@Icons.Material.TwoTone.Cottage" IconColor="Color.Success" Title="Inicio" />
+                    <AuthorizeView>
+                        <Authorized>
+                            <BottomNavMenuItem Href="Configuracion/MiPerfil" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.PersonOutline" IconColor="Color.Success" Title="Mi perfil"></BottomNavMenuItem>
+                        </Authorized>
+                        <NotAuthorized>
+                            <BottomNavMenuItem Href="/Ingreso?returnUrl=%2F" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.PersonOutline" IconColor="Color.Success" Title="Ingresar"></BottomNavMenuItem>
+                        </NotAuthorized>
+                    </AuthorizeView>
+                </BottomNavMenu>
+            </div>
+        }
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback OnDarkModeToggle { get; set; }
+
+    private bool _drawerOpen = false;
+    const string RouteBack = "/back";
+
+    private bool ShowBottomNav
+    {
+        get
+        {
+            var rel = _navigationManager.Uri.Substring(_navigationManager.BaseUri.Length).Split('?')[0].Trim('/');
+            rel = rel.ToLowerInvariant();
+            return rel != "g" && !rel.StartsWith("ingreso");
+        }
+    }
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _navigationManager.RegisterLocationChangingHandler(LocationChangingHandler);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async ValueTask LocationChangingHandler(LocationChangingContext context)
+    {
+        bool isBackRoute = context.TargetLocation.EndsWith(RouteBack, StringComparison.OrdinalIgnoreCase);
+
+        if (isBackRoute)
+        {
+            context.PreventNavigation();
+            await _jsRuntime.InvokeVoidAsync("history.back"); 
+        }
+    }
+}

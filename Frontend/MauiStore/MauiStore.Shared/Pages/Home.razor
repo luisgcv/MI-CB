@@ -1,4 +1,5 @@
 @page "/home"
+@layout MauiStore.Shared.Layout.MainLayoutPages
 @using MudBlazor
 @using MauiStore.Shared.Services
 @using Microsoft.AspNetCore.Components
@@ -6,99 +7,126 @@
 @inject NavigationManager Nav
 
 <style>
-    /* Permitir scroll dentro de la tarjeta */
-    .scrollable-card {
-        max-height: 85vh;
-        overflow-y: auto;
-        padding-right: 8px;
-    }
-
-        .scrollable-card::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .scrollable-card::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .scrollable-card::-webkit-scrollbar-thumb {
-            background: #46a441;
-            border-radius: 10px;
-        }
-    /* Para mejorar el efecto hover de las tarjetas */
+    /* Animaciones */
     .menu-card {
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
         height: 100%;
+        border-radius: 16px !important;
+        background: white;
+        border: 1px solid rgba(70, 164, 65, 0.1);
     }
 
         .menu-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            box-shadow: 0 12px 24px rgba(70, 164, 65, 0.15);
+            border-color: rgba(70, 164, 65, 0.3);
+        }
+
+        .menu-card:active {
+            transform: translateY(0px);
+        }
+
+    .welcome-icon {
+        animation: fadeInDown 0.5s ease-out;
+    }
+
+    @@keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Ocultar scrollbar pero mantener funcionalidad  */
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
         }
 </style>
 
-<div class="cbpeq-card scrollable-card">
-    <MudCardContent>
-        <!-- Logo y bienvenida -->
-        <div class="d-flex flex-column align-center text-center mb-6">
-            <MudImage Src="/images/logoSuper.png"
-                      Alt="Compre Bien en línea"
-                      Height="80"
-                      Class="mb-4 logo" />
-            <MudText Typo="Typo.h4" Color="Color.Primary" Class="font-weight-bold gotham-bold">
-                ¡Bienvenido, @UserName!
-            </MudText>
-            <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mt-1">
-                ¿Qué deseas hacer hoy?
-            </MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
-                Selecciona una opción para continuar.
-            </MudText>
-        </div>
+<div style="padding: 16px 20px 20px 20px;">
+    <!-- Header de bienvenida -->
+    <div class="d-flex flex-column align-center text-center mb-6 welcome-icon mt-n8">
+        <MudImage Src="/images/logoSuper.png"
+                  Alt="Compre Bien en línea"
+                  Height="80"
+                  Class="mb-2 logo" />
 
-        <!-- Grid de opciones -->
-        <MudGrid Justify="Justify.Center" Spacing="4">
-            @foreach (var menuItem in MenuItems)
-            {
-                <MudItem xs="12" sm="6" md="4">
-                    <MudCard Elevation="2"
-                             Class="menu-card rounded-lg"
-                             @onclick="() => NavigateTo(menuItem.Route)">
-                        <MudCardContent>
-                            <div class="d-flex flex-column align-center text-center">
+        <MudText Typo="Typo.h5" Style="color: #2c3e50;" Class="font-weight-bold mb-2">
+            ¡Hola, @UserName!
+        </MudText>
+        
+        <div style="background: linear-gradient(90deg, #e65c00 0%, #f39c12 100%);
+            height: 3px;
+            width: 50px;
+            border-radius: 2px;
+            margin: 8px 0;">
+        </div>
+        
+        <MudText Typo="Typo.subtitle1" Style="color: #e65c00; font-weight: 600;" Class="mt-3">
+            ¿Qué deseas hacer hoy?
+        </MudText>
+        
+        <MudText Typo="Typo.body2" Style="color: #7f8c8d;" Class="mt-2">
+            Selecciona una opción para continuar
+        </MudText>
+    </div>
+
+    <MudGrid Spacing="2" Justify="Justify.Center">
+        @foreach (var menuItem in MenuItems)
+        {
+            <MudItem xs="12" sm="6" md="4" lg="4">
+                <MudCard Elevation="0"
+                         Class="menu-card"
+                         @onclick="() => NavigateTo(menuItem.Route)">
+                    <MudCardContent Class="pa-4">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="background: rgba(70, 164, 65, 0.1);
+                                border-radius: 12px;
+                                padding: 10px;
+                                min-width: 48px;
+                                text-align: center;">
                                 <MudIcon Icon="@menuItem.Icon"
-                                         Size="Size.Large"
-                                         Color="Color.Primary"
-                                         Class="mb-3" />
-                                <MudText Typo="Typo.h6" Class="font-weight-bold mb-2">
+                                         Size="Size.Medium"
+                                         Style="color: #46a441;" />
+                            </div>
+                            <div style="flex: 1;">
+                                <MudText Typo="Typo.subtitle1" Style="color: #2c3e50; font-weight: 600;" Class="mb-1">
                                     @menuItem.Title
                                 </MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                <MudText Typo="Typo.body2" Style="color: #95a5a6; line-height: 1.3;">
                                     @menuItem.Description
                                 </MudText>
-                                <MudIcon Icon="@Icons.Material.Filled.ArrowForward"
-                                         Size="Size.Small"
-                                         Color="Color.Primary"
-                                         Class="mt-3" />
                             </div>
-                        </MudCardContent>
-                    </MudCard>
-                </MudItem>
-            }
-        </MudGrid>
+                            <MudIcon Icon="@Icons.Material.Filled.ChevronRight"
+                                     Size="Size.Small"
+                                     Style="color: #46a441; opacity: 0.5;" />
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
 
-        <!-- Botón de cerrar sesión -->
-        <div class="d-flex justify-center mt-8">
-            <MudButton Variant="Variant.Text"
-                       Color="Color.Error"
-                       StartIcon="@Icons.Material.TwoTone.Logout"
-                       OnClick="Logout">
-                Cerrar sesión
-            </MudButton>
-        </div>
-    </MudCardContent>
+    <div class="d-flex justify-center mt-6">
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Error"
+                   StartIcon="@Icons.Material.TwoTone.Logout"
+                   OnClick="Logout"
+                   Style="border-radius: 25px; padding: 8px 24px;">
+            Cerrar sesión
+        </MudButton>
+    </div>
 </div>
 
 @code {
@@ -115,10 +143,11 @@
     };
 
     private void NavigateTo(string route) => Nav.NavigateTo(route);
+    
     private async Task Logout()
     {
         await Auth.LogoutAsync();
-        Nav.NavigateTo("/Ingreso", forceLoad: true); // Ajusta según tu ruta de login
+        Nav.NavigateTo("/", forceLoad: true);
     }
 
     private class MenuItem
