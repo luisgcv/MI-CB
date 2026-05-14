@@ -1,83 +1,157 @@
 ﻿// /MauiStore.Web/Services/AuthService.cs
+
 using System.Net.Http.Json;
-using System.Text.Json;
 using CbEnLinea.Api.Common.Dtos;
 using MauiStore.Infrastructure;
 using MauiStore.Shared.Models.Auth;
-using MauiStore.Shared.Services;
 using MauiStore.Web.Services;
 
 namespace MauiStore.Shared.Services
 {
     public interface IAuthService
     {
-        Task<(bool ok, string? error, TokenResponse? data)> LoginAsync(string identifier, string password, CancellationToken ct = default);
-        Task<(bool ok, string? error, RegisterResponse? data)> RegisterAsync(RegisterRequest request, CancellationToken ct = default);
-        Task<(bool ok, string? error, ForgotPasswordResponse? data)> ForgotPasswordAsync(string email, CancellationToken ct = default);
+        Task<(bool ok, string? error, LoginResponse? data)> LoginAsync(
+            string identifier,
+            string password,
+            CancellationToken ct = default);
+
+        Task<(bool ok, string? error, RegisterResponse? data)> RegisterAsync(
+            RegisterRequest request,
+            CancellationToken ct = default);
+
+        Task<(bool ok, string? error, ForgotPasswordResponse? data)> ForgotPasswordAsync(
+            string email,
+            CancellationToken ct = default);
+
         Task LogoutAsync();
+
         string? LastError { get; }
     }
 
     public sealed class AuthService : BaseApiService, IAuthService
     {
-        private const string TokenPath = "auth/token";                 // POST
-        private const string RegisterPath = "auth/register";           // POST
-        private const string ForgotPasswordPath = "auth/forgot-password"; // POST
+        private const string LoginPath = "auth/login";
+        private const string RegisterPath = "auth/register";
+        private const string ForgotPasswordPath = "auth/forgot-password";
 
         private readonly JwtAuthStateProvider _auth;
+
         public string? LastError { get; private set; }
 
-
-        public AuthService(JwtAuthStateProvider auth, ITokenStorageService tokenStorageService) : base(tokenStorageService)
+        public AuthService(
+            JwtAuthStateProvider auth,
+            ITokenStorageService tokenStorageService)
+            : base(tokenStorageService)
         {
             _auth = auth;
         }
 
-        // ---------- Login ----------
-        public Task<(bool ok, string? error, TokenResponse? data)> LoginAsync(string identifier, string password, CancellationToken ct = default)
-            => LoginAsync(new TokenRequest
-            {
-                Identifier = identifier?.Trim() ?? string.Empty,
-                Password = password?.Trim() ?? string.Empty
-            }, ct);
+        // ================= LOGIN =================
 
-        public async Task<(bool ok, string? error, TokenResponse? data)> LoginAsync(TokenRequest request, CancellationToken ct = default)
+        public async Task<(bool ok, string? error, LoginResponse? data)>
+            LoginAsync(
+                string identifier,
+                string password,
+                CancellationToken ct = default)
         {
             try
             {
                 await InitHttpClientHeaders();
-                var resp = await _http.PostAsJsonAsync(TokenPath, request, ct);
+
+                // Body EXACTO que espera NestJS
+                var requestBody = new
+                {
+                    identificationId = identifier.Trim(),
+                    password = password.Trim()
+                };
+
+                var resp = await _http.PostAsJsonAsync(
+                    LoginPath,
+                    requestBody,
+                    ct);
+
+                // ERROR HTTP
                 if (!resp.IsSuccessStatusCode)
                 {
-                    var msg = await resp.Content.ReadAsStringAsync(ct);
-                    return (false, string.IsNullOrWhiteSpace(msg) ? resp.ReasonPhrase : msg, null);
+                    var errorContent = await resp.Content.ReadAsStringAsync(ct);
+                    if (errorContent.Contains("Usuario no existe"))
+                    {
+                        return (false, "El usuario no existe.", null);
+                    }
+
+                    if (errorContent.Contains("Unauthorized"))
+                    {
+                        return (false, "Usuario o contraseña incorrectos.", null);
+                    }
+
+                    return (
+                        false,
+                        "No fue posible iniciar sesión.",
+                        null
+                    );
                 }
 
-                var data = await resp.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: ct);
-                await _auth.MarkUserAsAuthenticatedAsync(data!.AccessToken);
+                // RESPUESTA
+                var data = await resp.Content.ReadFromJsonAsync<LoginResponse>(
+                    cancellationToken: ct);
+
+                if (data == null || string.IsNullOrWhiteSpace(data.Token))
+                {
+                    return (false, "Token inválido", null);
+                }
+
+                // GUARDAR TOKEN
+                await _tokenStorageService.SetTokenAsync(data.Token);
+
+                // ACTUALIZAR AUTH STATE
+                await _auth.MarkUserAsAuthenticatedAsync(data.Token);
+
                 return (true, null, data);
             }
             catch (Exception ex)
             {
-                return (false, ex.Message, null);
+                return (false, ex.ToString(), null);
             }
         }
 
-        // ---------- Register ----------
-        public async Task<(bool ok, string? error, RegisterResponse? data)> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
+        // ================= REGISTER =================
+
+        public async Task<(bool ok, string? error, RegisterResponse? data)>
+            RegisterAsync(
+                RegisterRequest request,
+                CancellationToken ct = default)
         {
             try
             {
                 await InitHttpClientHeaders();
-                var resp = await _http.PostAsJsonAsync(RegisterPath, request, ct);
+
+                var resp = await _http.PostAsJsonAsync(
+                    RegisterPath,
+                    request,
+                    ct);
+
                 if (!resp.IsSuccessStatusCode)
                 {
                     var msg = await resp.Content.ReadAsStringAsync(ct);
-                    return (false, string.IsNullOrWhiteSpace(msg) ? resp.ReasonPhrase : msg, null);
+
+                    return (
+                        false,
+                        string.IsNullOrWhiteSpace(msg)
+                            ? resp.ReasonPhrase
+                            : msg,
+                        null
+                    );
                 }
 
-                var data = await resp.Content.ReadFromJsonAsync<RegisterResponse>(cancellationToken: ct);
-                await _auth.MarkUserAsAuthenticatedAsync(data!.AccessToken!);
+                var data = await resp.Content
+                    .ReadFromJsonAsync<RegisterResponse>(
+                        cancellationToken: ct);
+
+                if (data?.AccessToken != null)
+                {
+                    await _auth.MarkUserAsAuthenticatedAsync(data.AccessToken);
+                }
+
                 return (true, null, data);
             }
             catch (Exception ex)
@@ -86,23 +160,41 @@ namespace MauiStore.Shared.Services
             }
         }
 
-        // ---------- Forgot Password ----------
-        public async Task<(bool ok, string? error, ForgotPasswordResponse? data)> ForgotPasswordAsync(string email, CancellationToken ct = default)
+        // ================= FORGOT PASSWORD =================
+
+        public async Task<(bool ok, string? error, ForgotPasswordResponse? data)>
+            ForgotPasswordAsync(
+                string email,
+                CancellationToken ct = default)
         {
             try
             {
-                var resp = await _http.PostAsJsonAsync(ForgotPasswordPath, new ForgotPasswordRequest
-                {
-                    Email = email,
-                    Target = LinkTarget.Web,
-                }, ct);
+                var resp = await _http.PostAsJsonAsync(
+                    ForgotPasswordPath,
+                    new ForgotPasswordRequest
+                    {
+                        Email = email,
+                        Target = LinkTarget.Web,
+                    },
+                    ct);
+
                 if (!resp.IsSuccessStatusCode)
                 {
                     var msg = await resp.Content.ReadAsStringAsync(ct);
-                    return (false, string.IsNullOrWhiteSpace(msg) ? resp.ReasonPhrase : msg, null);
+
+                    return (
+                        false,
+                        string.IsNullOrWhiteSpace(msg)
+                            ? resp.ReasonPhrase
+                            : msg,
+                        null
+                    );
                 }
 
-                var data = await resp.Content.ReadFromJsonAsync<ForgotPasswordResponse>(cancellationToken: ct);
+                var data = await resp.Content
+                    .ReadFromJsonAsync<ForgotPasswordResponse>(
+                        cancellationToken: ct);
+
                 return (true, null, data);
             }
             catch (Exception ex)
@@ -111,7 +203,12 @@ namespace MauiStore.Shared.Services
             }
         }
 
-        // ---------- Logout ----------
-        public async Task LogoutAsync() => await _auth.MarkUserAsLoggedOutAsync();
+        // ================= LOGOUT =================
+
+        public async Task LogoutAsync()
+        {
+            await _tokenStorageService.ClearAsync();
+            await _auth.MarkUserAsLoggedOutAsync();
+        }
     }
 }
