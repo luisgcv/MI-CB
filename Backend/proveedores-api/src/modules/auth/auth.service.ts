@@ -28,6 +28,9 @@ export class AuthService {
       throw new UnauthorizedException('Contraseña incorrecta');
     }
 
+    usuario.ultimoInicioSesion = new Date();
+    await this.usuarioRepository.save(usuario);
+
     const payload = {
       sub: usuario.idIdentificacion,
     };

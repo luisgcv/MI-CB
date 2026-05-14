@@ -7,8 +7,6 @@ import { AuthController } from './auth.controller';
 
 import { UsuarioEntity } from '../../database/entities/usuario.entity';
 
-console.log(process.env.JWT_SECRET);
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([UsuarioEntity]),
