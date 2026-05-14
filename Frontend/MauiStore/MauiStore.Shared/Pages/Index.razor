@@ -87,9 +87,10 @@
 
             if (ok)
             {
-                await InvokeAsync(StateHasChanged);
-                var target = string.IsNullOrWhiteSpace(ReturnUrl) ? "/" : ReturnUrl!;
-                Nav.NavigateTo(target, forceLoad: false);
+                error = "LOGIN EXITOSO";
+
+                // pagina inicio
+                Nav.NavigateTo("/home");
             }
             else
             {
@@ -98,13 +99,9 @@
                     : err;
             }
         }
-        catch (OperationCanceledException)
-        {
-            error = "La solicitud tardó demasiado (timeout después de 20 segundos).";
-        }
         catch (Exception ex)
         {
-            error = $"Error inesperado: {ex.Message}";
+            error = ex.ToString();
         }
         finally
         {

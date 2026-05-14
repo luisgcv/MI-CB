@@ -21,7 +21,7 @@ namespace MauiStore.Shared.Services
             };
 
             //aca va el url de la api
-            return new HttpClient(handler) { BaseAddress = new Uri("https://APIS.comprebien.cr/PRUEBA/") };
+            return new HttpClient(handler) { BaseAddress = new Uri("http://192.168.100.185:3000/") };
         }
 
         protected async Task InitHttpClientHeaders()
