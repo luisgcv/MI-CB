@@ -2,37 +2,39 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { UsuarioEntity } from '../../database/entities/usuario.entity';
+
+import { UserEntity } from '../../database/entities/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(UsuarioEntity)
-    private usuarioRepository: Repository<UsuarioEntity>,
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
 
     private jwtService: JwtService,
   ) {}
 
-  async login(idIdentificacion: string, password: string) {
-    const usuario = await this.usuarioRepository.findOne({
+  async login(identificationId: string, password: string) {
+    const user = await this.userRepository.findOne({
       where: {
-        idIdentificacion,
+        identificationId,
       },
     });
 
-    if (!usuario) {
+    if (!user) {
       throw new UnauthorizedException('Usuario no existe');
     }
 
-    if (usuario.password !== password) {
+    if (user.password !== password) {
       throw new UnauthorizedException('Contraseña incorrecta');
     }
 
-    usuario.ultimoInicioSesion = new Date();
-    await this.usuarioRepository.save(usuario);
+    user.lastLogin = new Date();
+
+    await this.userRepository.save(user);
 
     const payload = {
-      sub: usuario.idIdentificacion,
+      sub: user.identificationId,
     };
 
     return {

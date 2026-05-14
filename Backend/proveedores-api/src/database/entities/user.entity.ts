@@ -1,11 +1,11 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('TBL_PROV_USUARIOS')
-export class UsuarioEntity {
+export class UserEntity {
   @PrimaryColumn({
     name: 'ID_IDENTIFICACION',
   })
-  idIdentificacion!: string;
+  identificationId!: string;
 
   @Column({
     name: 'CONTRASEÑA',
@@ -16,17 +16,17 @@ export class UsuarioEntity {
     name: 'IP_ULTIMO_ACCESO',
     nullable: true,
   })
-  ipUltimoAcceso!: string;
+  lastAccessIp!: string;
 
   @Column({
     name: 'ULTIMO_INICIO_SESION',
     nullable: true,
   })
-  ultimoInicioSesion!: Date;
+  lastLogin!: Date;
 
   @Column({
     name: 'ULTIMO_CAMBIO_CONTRASEÑA',
     nullable: true,
   })
-  ultimoCambioContrasena!: Date;
+  lastPasswordChange!: Date;
 }
