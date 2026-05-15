@@ -90,7 +90,7 @@
                 error = "LOGIN EXITOSO";
 
                 // pagina inicio
-                Nav.NavigateTo("/home");
+                Nav.NavigateTo(string.IsNullOrWhiteSpace(ReturnUrl) ? "/home" : ReturnUrl);
             }
             else
             {

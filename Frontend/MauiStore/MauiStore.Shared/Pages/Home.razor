@@ -3,6 +3,8 @@
 @using MudBlazor
 @using MauiStore.Shared.Services
 @using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
 @inject IAuthService Auth
 @inject NavigationManager Nav
 
@@ -53,6 +55,13 @@
             display: none;
         }
 </style>
+
+@if (checkingAuth)
+{
+    <MudProgressCircular Indeterminate="true" Class="m-4" />
+}
+else
+{
 
 <div style="padding: 16px 20px 20px 20px;">
     <!-- Header de bienvenida -->
@@ -129,8 +138,29 @@
     </div>
 </div>
 
+}
+
 @code {
     private string UserName = "Juan";
+
+    private bool checkingAuth = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity is null || !user.Identity.IsAuthenticated)
+        {
+            Nav.NavigateTo("/?returnUrl=/home", forceLoad: false);
+            return;
+        }
+
+        checkingAuth = false;
+        StateHasChanged();
+    }
 
     private List<MenuItem> MenuItems = new()
     {

@@ -1,4 +1,5 @@
-﻿using MauiStore.Web.Services;
+﻿using System.Net.Http.Headers;
+using MauiStore.Web.Services;
 
 namespace MauiStore.Shared.Services
 {
@@ -21,14 +22,23 @@ namespace MauiStore.Shared.Services
             };
 
             //aca va el url de la api
-            return new HttpClient(handler) { BaseAddress = new Uri("http://192.168.100.185:3000/") };
+            return new HttpClient(handler) { BaseAddress = new Uri("http://localhost:3000/") };
         }
 
         protected async Task InitHttpClientHeaders()
         {
             if (!_http.DefaultRequestHeaders.Any(header => header.Key == "client-id"))
                 _http.DefaultRequestHeaders.Add("client-id", await _tokenStorageService.GetClientId());
+
+            var token = await _tokenStorageService.GetTokenAsync();
+
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                _http.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+            }
         }
+
     }
     public class ApiBaseResponse<T>
     {

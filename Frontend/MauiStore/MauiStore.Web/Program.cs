@@ -37,11 +37,11 @@ builder.Services.AddSingleton<IFormFactor, FormFactor>();
 builder.Services.AddScoped<IFileService, WebFileService>();
 
 // ======  AUTENTICACIÓN/AUTORIZACIÓN DEL SERVIDOR (requerido por [Authorize]) ======
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+/*builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
-        options.LoginPath = "/Ingreso";
-        options.AccessDeniedPath = "/Ingreso";
+        options.LoginPath = "/";
+        options.AccessDeniedPath = "/";
 
         options.Events.OnRedirectToLogin = ctx =>
         {
@@ -53,7 +53,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
             // Navegación de página -> redirige al login con returnUrl
             var returnUrl = Uri.EscapeDataString(ctx.Request.Path + ctx.Request.QueryString);
-            ctx.Response.Redirect($"/Ingreso?returnUrl={returnUrl}");
+            ctx.Response.Redirect($"/?returnUrl={returnUrl}");
             return Task.CompletedTask;
         };
 
@@ -65,10 +65,20 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 return Task.CompletedTask;
             }
 
-            ctx.Response.Redirect("/Ingreso");
+            ctx.Response.Redirect("/");
             return Task.CompletedTask;
         };
-    });
+    });*/
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.LoginPath = "/";
+    options.AccessDeniedPath = "/";
+});
 
 builder.Services.AddAuthorization(); // servidor
 
@@ -111,7 +121,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-app.UseAuthentication();   // requerido por [Authorize] en componentes server
+//app.UseAuthentication();   // requerido por [Authorize] en componentes server
 app.UseAuthorization();
 
 app.UseAntiforgery();

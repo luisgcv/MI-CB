@@ -43,7 +43,7 @@
 
         // Si ya estamos en /Ingreso, no hagas nada
         var uri = Nav.Uri ?? string.Empty;
-        if (uri.Contains("/Ingreso", StringComparison.OrdinalIgnoreCase))
+        if (Nav.ToBaseRelativePath(uri) == "")
             return;
 
         // Calcula returnUrl relativo
@@ -53,7 +53,7 @@
         // En WebView, navega después de ceder el hilo para evitar pantalla en blanco
         await Task.Yield();
         await InvokeAsync(() =>
-            Nav.NavigateTo($"/Ingreso?returnUrl={Uri.EscapeDataString(returnUrl)}", false)
+            Nav.NavigateTo($"/?returnUrl={Uri.EscapeDataString(returnUrl)}", false)
         );
     }
 }
