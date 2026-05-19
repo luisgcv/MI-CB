@@ -7,10 +7,13 @@ import { AuthController } from './auth.controller';
 
 import { UserEntity } from '../../database/entities/user.entity';
 
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from './jwt.strategy';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity]),
-
+    PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
 
@@ -20,7 +23,7 @@ import { UserEntity } from '../../database/entities/user.entity';
     }),
   ],
 
-  providers: [AuthService],
+    providers: [AuthService, JwtStrategy],
 
   controllers: [AuthController],
 })
