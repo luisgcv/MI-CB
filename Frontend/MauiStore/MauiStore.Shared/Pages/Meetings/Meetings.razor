@@ -1,0 +1,261 @@
+@page "/reuniones"
+@using MudBlazor
+@using MauiStore.Shared.Layout
+@inject NavigationManager _navigationManager
+@inject ISnackbar _snackbar
+
+@layout MainLayoutPages
+
+<style>
+    .solicitud-page {
+        background-color: #fdf5e6;
+        min-height: 100vh;
+    }
+
+    .solicitud-card {
+        border-radius: 14px !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+    }
+
+    .solicitud-section-title {
+        font-weight: 700;
+        font-size: 1.35rem;
+        color: #2e7d32;
+        margin-bottom: 18px;
+    }
+
+    .field-label {
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .btn-borrador {
+        border: 1.5px solid #e65100 !important;
+        color: #e65100 !important;
+        background-color: transparent !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        padding: 10px 0 !important;
+        text-transform: none !important;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+        .btn-borrador:hover {
+            background-color: rgba(230, 81, 0, 0.06) !important;
+        }
+
+    .btn-enviar {
+        background-color: #2e7d32 !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        padding: 10px 0 !important;
+        text-transform: none !important;
+        width: 100%;
+        box-shadow: 0 2px 8px rgba(46,125,50,0.25) !important;
+    }
+
+        .btn-enviar:hover {
+            background-color: #1b5e20 !important;
+        }
+
+    /* Ajuste de los campos MudBlazor para que coincidan con el diseño */
+    .mud-input-outlined .mud-input-outlined-border {
+        border-color: #bdbdbd !important;
+        border-radius: 8px !important;
+    }
+
+    .mud-input-outlined:hover .mud-input-outlined-border {
+        border-color: #2e7d32 !important;
+    }
+
+    .mud-input-outlined.mud-focused .mud-input-outlined-border {
+        border-color: #2e7d32 !important;
+    }
+
+    .mud-input-label {
+        color: #555 !important;
+    }
+
+        .mud-input-label.mud-input-label-inputcontrol {
+            font-size: 0.85rem !important;
+        }
+</style>
+
+<div class="solicitud-page">
+
+    <!-- ── Cuerpo ── -->
+    <div class="pa-4">
+        <MudCard Class="solicitud-card">
+            <MudCardContent Class="pa-5">
+
+                <div class="solicitud-section-title">Detalles de la reunión</div>
+
+                <!-- Motivo de la reunión -->
+                <MudTextField @bind-Value="_model.Motivo"
+                              Label="Motivo de la reunión"
+                              Placeholder="Ej. Solicitar revisión"
+                              Variant="Variant.Outlined"
+                              FullWidth="@true"
+                              Margin="Margin.Dense"
+                              Class="mb-4"
+                              InputMode="InputMode.text" />
+
+                <!-- Tipo de reunión -->
+                <MudSelect @bind-Value="_model.TipoReunion"
+                           Label="Tipo de reunión"
+                           Variant="Variant.Outlined"
+                           FullWidth="@true"
+                           Margin="Margin.Dense"
+                           Class="mb-4"
+                           AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@("Comercial")">Comercial</MudSelectItem>
+                    <MudSelectItem Value="@("Técnica")">Técnica</MudSelectItem>
+                    <MudSelectItem Value="@("Administrativa")">Administrativa</MudSelectItem>
+                    <MudSelectItem Value="@("Otro")">Otro</MudSelectItem>
+                </MudSelect>
+
+                <!-- Fecha -->
+                <MudDatePicker @bind-Date="_model.Fecha"
+                               Label="Fecha"
+                               Placeholder="mm/dd/yyyy"
+                               DateFormat="MM/dd/yyyy"
+                               Variant="Variant.Outlined"
+                               FullWidth="@true"
+                               Margin="Margin.Dense"
+                               Class="mb-4"
+                               Editable="@true"
+                               AdornmentColor="Color.Default" />
+
+                <!-- Hora -->
+                <MudTimePicker @bind-Time="_model.Hora"
+                               Label="Hora"
+                               Variant="Variant.Outlined"
+                               FullWidth="@true"
+                               Margin="Margin.Dense"
+                               Class="mb-4"
+                               Editable="@true"
+                               AdornmentColor="Color.Default"
+                               AmPm="@true" />
+
+                <!-- Observaciones -->
+                <MudTextField @bind-Value="_model.Observaciones"
+                              Label="Observaciones"
+                              Placeholder="Proporcione detalles adicionales de la reunión..."
+                              Variant="Variant.Outlined"
+                              Lines=4
+                              FullWidth="@true"
+                              Margin="Margin.Dense"
+                              Class="mb-5" />
+
+                <!-- Botón Guardar borrador -->
+                <MudButton Class="btn-borrador"
+                           Variant="Variant.Outlined"
+                           DisableElevation="@true"
+                           OnClick="GuardarBorrador"
+                           Disabled="@_isSaving">
+                    @if (_isSaving)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="@true" Style="color:#e65100; margin-right:8px;" />
+                    }
+                    Guardar borrador
+                </MudButton>
+
+                <!-- Botón Enviar solicitud -->
+                <MudButton Class="btn-enviar"
+                           Variant="Variant.Filled"
+                           DisableElevation="@false"
+                           OnClick="EnviarSolicitud"
+                           Disabled="@_isSending">
+                    @if (_isSending)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="@true" Style="color:#fff; margin-right:8px;" />
+                    }
+                    Enviar solicitud
+                </MudButton>
+
+            </MudCardContent>
+        </MudCard>
+    </div>
+
+</div>
+
+@code {
+
+    // ── Modelo ──────────────────────────────────────────────────────────────
+    private MeetingRequestModel _model = new();
+    private bool _isSaving;
+    private bool _isSending;
+
+    // ── Acciones ────────────────────────────────────────────────────────────
+    private async Task GuardarBorrador()
+    {
+        if (!ValidarFormulario(showErrors: false)) return;
+
+        _isSaving = true;
+        try
+        {
+            // TODO: Conectar con el servicio correspondiente
+            await Task.Delay(800); // simula llamada async
+            _snackbar.Add("Borrador guardado correctamente.", Severity.Info);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task EnviarSolicitud()
+    {
+        if (!ValidarFormulario(showErrors: true)) return;
+
+        _isSending = true;
+        try
+        {
+            // TODO: Conectar con el servicio correspondiente
+            await Task.Delay(800); // simula llamada async
+            _snackbar.Add("Solicitud enviada exitosamente.", Severity.Success);
+            _navigationManager.NavigateTo("/");
+        }
+        finally
+        {
+            _isSending = false;
+        }
+    }
+
+    private bool ValidarFormulario(bool showErrors)
+    {
+        if (string.IsNullOrWhiteSpace(_model.Motivo))
+        {
+            if (showErrors) _snackbar.Add("Ingrese el motivo de la reunión.", Severity.Warning);
+            return false;
+        }
+        if (_model.Fecha is null)
+        {
+            if (showErrors) _snackbar.Add("Seleccione una fecha.", Severity.Warning);
+            return false;
+        }
+        if (_model.Hora is null)
+        {
+            if (showErrors) _snackbar.Add("Seleccione una hora.", Severity.Warning);
+            return false;
+        }
+        return true;
+    }
+
+    // ── Modelo de datos ─────────────────────────────────────────────────────
+    private sealed class MeetingRequestModel
+    {
+        public string Motivo { get; set; } = string.Empty;
+        public string TipoReunion { get; set; } = "Comercial";
+        public DateTime? Fecha { get; set; }
+        public TimeSpan? Hora { get; set; }
+        public string Observaciones { get; set; } = string.Empty;
+    }
+}

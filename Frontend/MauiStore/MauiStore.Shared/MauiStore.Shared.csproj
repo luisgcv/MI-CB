@@ -78,6 +78,7 @@
 
   <ItemGroup>
     <Folder Include="Data\" />
+    <Folder Include="Pages\Meetings\" />
     <Folder Include="Views\" />
   </ItemGroup>
 
