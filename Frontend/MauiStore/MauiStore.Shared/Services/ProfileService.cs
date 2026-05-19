@@ -7,8 +7,8 @@ namespace MauiStore.Shared.Services;
 
 public sealed class ProfileService : BaseApiService
 {
-    private const string ProfilePath = "api/profile";
-    private const string ChangePasswordPath = "api/profile/change-password";
+    private const string ProfilePath = "profile";
+    private const string ChangePasswordPath = "profile/change-password";
 
     private readonly JwtAuthStateProvider _auth;
 
