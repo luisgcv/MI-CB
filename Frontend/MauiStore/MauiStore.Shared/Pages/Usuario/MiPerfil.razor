@@ -5,8 +5,8 @@
 @inject ProfileService profileService
 @inject ISnackbar Snackbar
 
-@using CbEnLinea.Api.Common.Models.Profile
-@using CbEnLinea.Api.Common.Models.Stores
+@using MauiStore.Shared.Models.Profile
+@* @ @using CbEnLinea.Api.Common.Models.Stores@ Comentao de momento *@
 @using MauiStore.Shared.Services
 @using Microsoft.AspNetCore.Authorization
 @using MudBlazor
@@ -72,19 +72,10 @@
                 <MudForm @ref="profileForm">
 
                     <MudGrid Spacing="2">
-
                         <MudItem xs="12">
                             <MudTextField T="string"
-                                          Label="Nombre"
-                                          @bind-Value="profile.Firstname"
-                                          Required="true"
-                                          Variant="Variant.Outlined" />
-                        </MudItem>
-
-                        <MudItem xs="12">
-                            <MudTextField T="string"
-                                          Label="Apellido"
-                                          @bind-Value="profile.Lastname"
+                                          Label="Nombre completo"
+                                          @bind-Value="profile.Name"
                                           Required="true"
                                           Variant="Variant.Outlined" />
                         </MudItem>
@@ -92,13 +83,6 @@
                         <MudItem xs="12">
                             <MudTextField Label="Identificación"
                                           Value="@profile.IdentificationNumber"
-                                          ReadOnly="true"
-                                          Variant="Variant.Outlined" />
-                        </MudItem>
-
-                        <MudItem xs="12">
-                            <MudTextField Label="Tipo Identificación"
-                                          Value="@profile.IdentificationType.ToString()"
                                           ReadOnly="true"
                                           Variant="Variant.Outlined" />
                         </MudItem>
@@ -112,18 +96,34 @@
 
                         <MudItem xs="12">
                             <MudTextField T="string"
-                                          Label="Teléfono móvil"
-                                          @bind-Value="profile.MobilePhone"
-                                          Variant="Variant.Outlined" />
-                        </MudItem>
-
-                        <MudItem xs="12">
-                            <MudTextField T="string"
                                           Label="Teléfono"
                                           @bind-Value="profile.Phone"
                                           Variant="Variant.Outlined" />
                         </MudItem>
 
+                        <MudItem xs="12">
+                            <MudTextField Label="Empresa"
+                                          Value="@profile.Company"
+                                          ReadOnly="true"
+                                          Variant="Variant.Outlined" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField Label="Departamento"
+                                          Value="@profile.Department"
+                                          ReadOnly="true"
+                                          Variant="Variant.Outlined" />
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudTextField Label="Puesto"
+                                          Value="@profile.Position"
+                                          ReadOnly="true"
+                                          Variant="Variant.Outlined" />
+                        </MudItem>
+
+
+                        @* 
                         <MudItem xs="12">
                             <MudSwitch T="bool"
                                        Label="Factura electrónica"
@@ -132,31 +132,8 @@
                                        Color="Color.Primary" />
 
                         </MudItem>
+                        *@
 
-                        <MudItem xs="12">
-                            <MudSelect T="Guid?"
-                                       @bind-Value="profile.StoreId"
-                                       Label="Tienda favorita"
-                                       Variant="Variant.Outlined"
-                                       Disabled="@isStoresLoading"
-                                       Adornment="Adornment.Start"
-                                       AdornmentColor="Color.Primary"
-                                       AdornmentIcon="@Icons.Material.Outlined.Store">
-                                <MudSelectItem T="Guid?" Disabled="true" Value="@(default(Guid?))">
-                                    @(isStoresLoading ? "Cargando tiendas..." : "Seleccione una tienda (opcional)")
-                                </MudSelectItem>
-
-                                @foreach (var s in stores)
-                                {
-                                    <MudSelectItem T="Guid?" Value="s.Id">@s.Name</MudSelectItem>
-                                }
-                            </MudSelect>
-
-                            @if (!string.IsNullOrWhiteSpace(storesErrorMessage))
-                            {
-                                <MudText Class="mt-1" Color="Color.Error" Typo="Typo.caption">@storesErrorMessage</MudText>
-                            }
-                        </MudItem>
 
                         <MudItem xs="12">
                             <MudButton Variant="Variant.Filled"
@@ -268,9 +245,9 @@
     private string confirmPassword = "";
 
     // stores
-    private List<StoreDto> stores = new();
-    private bool isStoresLoading;
-    private string? storesErrorMessage;
+    //private List<StoreDto> stores = new();
+    //private bool isStoresLoading;
+    //private string? storesErrorMessage;
 
 
     protected override async Task OnInitializedAsync()
@@ -281,10 +258,10 @@
     }
 
 
-    private void OnElectronicInvoiceChanged(bool value)
+    /*private void OnElectronicInvoiceChanged(bool value)
     {
         profile.ElectronicInvoiceRequired = value;
-    }
+    }*/
 
     private async Task LoadProfile()
     {
@@ -298,7 +275,16 @@
         }
         else
         {
-            profile = result.Data;
+            profile = new GetProfileResponse
+            {
+                IdentificationNumber = result.Data.IdentificationNumber,
+                Name = result.Data.Name,
+                Phone = result.Data.Phone,
+                Email = result.Data.Email,
+                Company = result.Data.Company,
+                Department = result.Data.Department,
+                Position = result.Data.Position
+            };
         }
 
         isLoading = false;
@@ -318,7 +304,7 @@
 
         await Task.Yield();
 
-        var updateRequest = new UpdateProfileRequest
+        /*var updateRequest = new UpdateProfileRequest
         {
             Firstname = profile.Firstname,
             Lastname = profile.Lastname,
@@ -326,9 +312,14 @@
             Phone = profile.Phone,
             StoreId = profile.StoreId,
             ElectronicInvoiceRequired = profile.ElectronicInvoiceRequired
-        };
+        };*/
 
-        var result = await profileService.UpdateProfileAsync(updateRequest);
+        // Como solo Name y Phone son editables:
+        var result = await profileService.UpdateProfileAsync(new UpdateProfileRequest
+        {
+            Name = profile.Name,
+            Phone = profile.Phone
+        });
 
         if (!result.Success)
         {

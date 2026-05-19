@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Json;
-using CbEnLinea.Api.Common.Models.Profile;
+using MauiStore.Shared.Models.Profile;
+//using CbEnLinea.Api.Common.Models.Profile;
 using MauiStore.Web.Services;
 
 namespace MauiStore.Shared.Services;

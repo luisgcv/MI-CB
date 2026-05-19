@@ -6,6 +6,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 
+import { ProfileModule } from './modules/profile/profile.module';
+
 @Module({
   imports: [
     // Variables de entorno
@@ -31,7 +33,8 @@ import { AuthModule } from './modules/auth/auth.module';
       },
     }),
 
-    AuthModule,
+        AuthModule,
+        ProfileModule,
   ],
 
   controllers: [AppController],
