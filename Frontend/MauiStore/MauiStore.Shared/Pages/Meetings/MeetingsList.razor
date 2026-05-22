@@ -1,0 +1,171 @@
+@page "/reuniones"
+@using MudBlazor
+@using MauiStore.Shared.Layout
+@using MauiStore.Shared.Services
+@inject MeetingService MeetingService
+@inject NavigationManager _navigationManager
+@inject ISnackbar _snackbar
+
+@layout MainLayoutPages
+
+<style>
+    .meeting-table {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06) !important;
+    }
+
+    .meeting-table .mud-table-head {
+        background-color: #f7f9fa;
+    }
+
+    .state-chip {
+        font-weight: 600 !important;
+        letter-spacing: 0.5px;
+        padding: 0 12px !important;
+    }
+</style>
+
+<div class="pa-4">
+    <MudPaper Class="pa-4 mb-4 elevation-1" Style="border-radius: 12px;">
+        <div class="d-flex justify-space-between align-center">
+            <div>
+                <MudText Typo="Typo.h5" Class="mb-1 fw-bold" Style="color: #2e7d32;">Resumen de reuniones</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Aquí puedes ver las reuniones solicitadas y crear una nueva.
+                </MudText>
+            </div>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Success"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="CreateMeeting"
+                       Style="border-radius: 8px;">
+                Solicitar reunión
+            </MudButton>
+        </div>
+    </MudPaper>
+
+    @if (_isLoading)
+    {
+        <div class="d-flex justify-center mt-6">
+            <MudProgressCircular Size="Size.Large" Indeterminate="true" />
+        </div>
+    }
+    else if (_hasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4" Style="border-radius: 8px;">
+            @_errorMessage
+        </MudAlert>
+    }
+    else if (!_meetings.Any())
+    {
+        <MudPaper Class="pa-6 mt-4 text-center elevation-1" Style="border-radius: 12px;">
+            <div class="d-flex justify-center mb-4">
+                <MudIcon Icon="@Icons.Material.TwoTone.EventBusy" Size="Size.Large" Style="color: #bdbdbd; font-size: 4rem;" />
+            </div>
+            <MudText Typo="Typo.h6" Class="mb-2">No hay reuniones registradas</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                Aún no tienes reuniones creadas. Puedes solicitar una reunión con el equipo.
+            </MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="CreateMeeting" Style="border-radius: 8px;">
+                Solicitar reunión
+            </MudButton>
+        </MudPaper>
+    }
+    else
+    {
+        <MudTable Items="_meetings" Hover="true" Class="mt-4 meeting-table" Elevation="1">
+            <HeaderContent>
+                <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Fecha / Hora</MudText></MudTh>
+                <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Tipo</MudText></MudTh>
+                <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Motivo</MudText></MudTh>
+                <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Estado</MudText></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Fecha / Hora">
+                    <div class="d-flex flex-column">
+                        <MudText Typo="Typo.body2" Class="fw-bold">@context.FechaHoraInicio.ToString("dd MMM yyyy")</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@context.FechaHoraInicio.ToString("HH:mm") - @context.FechaHoraHasta.ToString("HH:mm")</MudText>
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Tipo">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@GetTipoIcon(context.TipoReunion)" Size="Size.Small" Class="mr-2" Style="color: #757575;" />
+                        <MudText Typo="Typo.body2">@context.TipoReunion</MudText>
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Motivo">
+                    <MudText Typo="Typo.body2" Style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        @context.Motivo
+                    </MudText>
+                </MudTd>
+                <MudTd DataLabel="Estado">
+                    <MudChip T="string" Color="@GetEstadoColor(context.EstadoReunion)" Size="Size.Small" Variant="Variant.Filled" Class="state-chip">
+                        @context.EstadoReunion
+                    </MudChip>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</div>
+
+@code {
+    private bool _isLoading;
+    private bool _hasError;
+    private string _errorMessage = string.Empty;
+    private List<MeetingSummaryDto> _meetings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMeetingsAsync();
+    }
+
+    private async Task LoadMeetingsAsync()
+    {
+        _isLoading = true;
+        _hasError = false;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            _meetings = await MeetingService.GetMeetingsAsync();
+        }
+        catch (Exception)
+        {
+            _hasError = true;
+            _errorMessage = "No se pudieron cargar las reuniones o no tienes reuniones creadas. Puedes solicitar una nueva.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void CreateMeeting()
+    {
+        _navigationManager.NavigateTo("/reuniones/crear");
+    }
+
+    private Color GetEstadoColor(string estado)
+    {
+        return estado?.ToLowerInvariant() switch
+        {
+            "aprobada" => Color.Success,
+            "pendiente" => Color.Warning,
+            "rechazada" => Color.Error,
+            "borrador" => Color.Default,
+            _ => Color.Info
+        };
+    }
+
+    private string GetTipoIcon(string tipo)
+    {
+        return tipo?.ToLowerInvariant() switch
+        {
+            "comercial" => Icons.Material.TwoTone.BusinessCenter,
+            "técnica" => Icons.Material.TwoTone.Computer,
+            "administrativa" => Icons.Material.TwoTone.Assignment,
+            _ => Icons.Material.TwoTone.Group
+        };
+    }
+}

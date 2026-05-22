@@ -30,13 +30,12 @@ builder.Services.AddBlazoredLocalStorage();
 
 // Preferencias existentes
 builder.Services.AddScoped<ClientPreferenceManager>();
-builder.Services.AddScoped<ProfileService>();
-
-// Servicios específicos compartidos
+builder.Services.AddScoped<ProfileService>();builder.Services.AddScoped<MeetingService>();
+// Servicios especï¿½ficos compartidos
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 builder.Services.AddScoped<IFileService, WebFileService>();
 
-// ======  AUTENTICACIÓN/AUTORIZACIÓN DEL SERVIDOR (requerido por [Authorize]) ======
+// ======  AUTENTICACIï¿½N/AUTORIZACIï¿½N DEL SERVIDOR (requerido por [Authorize]) ======
 /*builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
@@ -51,7 +50,7 @@ builder.Services.AddScoped<IFileService, WebFileService>();
                 return Task.CompletedTask;
             }
 
-            // Navegación de página -> redirige al login con returnUrl
+            // Navegaciï¿½n de pï¿½gina -> redirige al login con returnUrl
             var returnUrl = Uri.EscapeDataString(ctx.Request.Path + ctx.Request.QueryString);
             ctx.Response.Redirect($"/?returnUrl={returnUrl}");
             return Task.CompletedTask;
@@ -82,11 +81,11 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization(); // servidor
 
-// ======  AUTORIZACIÓN DEL CLIENTE (para Razor Components)  ======
+// ======  AUTORIZACIï¿½N DEL CLIENTE (para Razor Components)  ======
 builder.Services.AddAuthorizationCore();
 
 // ======  JWT en cliente ======
-builder.Services.AddScoped<ITokenStorageService, TokenStorageService>();   // Token storage (localStorage vía JS)
+builder.Services.AddScoped<ITokenStorageService, TokenStorageService>();   // Token storage (localStorage vï¿½a JS)
 builder.Services.AddScoped<JwtAuthStateProvider>();                        // Auth state basado en JWT
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<JwtAuthStateProvider>());
 
@@ -138,7 +137,7 @@ static bool IsApiRequest(HttpRequest req)
     if (req.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))
         return true;
 
-    // Heurística: si pide JSON explícitamente, trátalo como API
+    // Heurï¿½stica: si pide JSON explï¿½citamente, trï¿½talo como API
     var accept = req.Headers.Accept.ToString();
     if (!string.IsNullOrEmpty(accept) && accept.Contains("application/json", StringComparison.OrdinalIgnoreCase))
         return true;

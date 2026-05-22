@@ -1,7 +1,9 @@
-@page "/reuniones"
+@page "/reuniones/crear"
 @using MudBlazor
 @using MauiStore.Shared.Layout
+@using MauiStore.Shared.Services
 @inject NavigationManager _navigationManager
+@inject MeetingService MeetingService
 @inject ISnackbar _snackbar
 
 @layout MainLayoutPages
@@ -92,10 +94,24 @@
 
     <!-- ── Cuerpo ── -->
     <div class="pa-4">
+        <div class="d-flex align-center mb-4">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" 
+                           Color="Color.Inherit" 
+                           OnClick="@(() => _navigationManager.NavigateTo("/reuniones"))" 
+                           Class="mr-2" />
+            <div>
+                <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color: #2e7d32;">Solicitar Reunión</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Completa los campos para crear una nueva solicitud</MudText>
+            </div>
+        </div>
+
         <MudCard Class="solicitud-card">
             <MudCardContent Class="pa-5">
-
-                <div class="solicitud-section-title">Detalles de la reunión</div>
+                <div class="solicitud-section-title">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-2" Style="vertical-align: text-bottom;" />
+                    Detalles e Información general
+                </div>
+                <MudDivider Class="mb-5" />
 
                 <!-- Motivo de la reunión -->
                 <MudTextField @bind-Value="_model.Motivo"
@@ -115,10 +131,42 @@
                            Margin="Margin.Dense"
                            Class="mb-4"
                            AnchorOrigin="Origin.BottomCenter">
-                    <MudSelectItem Value="@("Comercial")">Comercial</MudSelectItem>
-                    <MudSelectItem Value="@("Técnica")">Técnica</MudSelectItem>
-                    <MudSelectItem Value="@("Administrativa")">Administrativa</MudSelectItem>
-                    <MudSelectItem Value="@("Otro")">Otro</MudSelectItem>
+                    @if (_tiposReunion == null)
+                    {
+                        <MudSelectItem Value="@("Cargando...")" Disabled="true">Cargando tipos de reunión...</MudSelectItem>
+                    }
+                    else
+                    {
+                        @foreach (var tipo in _tiposReunion)
+                        {
+                            <MudSelectItem Value="@tipo.Descripcion">@tipo.Descripcion</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+
+                <!-- Departamento -->
+                <MudSelect @bind-Value="_model.DepartmentId"
+                           Label="Departamento"
+                           Variant="Variant.Outlined"
+                           FullWidth="@true"
+                           Margin="Margin.Dense"
+                           Class="mb-4"
+                           AnchorOrigin="Origin.BottomCenter">
+                    @if (_departamentos == null)
+                    {
+                        <MudSelectItem Value="@(0)" Disabled="true">Cargando departamentos...</MudSelectItem>
+                    }
+                    else if (_departamentos.Count == 0)
+                    {
+                        <MudSelectItem Value="@(0)" Disabled="true">No hay departamentos disponibles</MudSelectItem>
+                    }
+                    else
+                    {
+                        @foreach (var dept in _departamentos)
+                        {
+                            <MudSelectItem Value="@dept.Id">@dept.Nombre</MudSelectItem>
+                        }
+                    }
                 </MudSelect>
 
                 <!-- Fecha -->
@@ -192,6 +240,64 @@
     private MeetingRequestModel _model = new();
     private bool _isSaving;
     private bool _isSending;
+    private List<MeetingTypeDto>? _tiposReunion;
+    private List<DepartmentDto>? _departamentos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTiposReunionAsync();
+        await LoadDepartamentosAsync();
+    }
+
+    private async Task LoadTiposReunionAsync()
+    {
+        try
+        {
+            _tiposReunion = await MeetingService.GetMeetingTypesAsync();
+            if (_tiposReunion.Any() && string.IsNullOrEmpty(_model.TipoReunion))
+            {
+                _model.TipoReunion = _tiposReunion.First().Descripcion;
+            }
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Excepción al cargar tipos de reunión: {ex.Message}", Severity.Error);
+            // Fallback en caso de excepción
+            CargarTiposPorDefecto();
+        }
+    }
+
+    private async Task LoadDepartamentosAsync()
+    {
+        try
+        {
+            _departamentos = await MeetingService.GetDepartmentsAsync();
+            if (_departamentos != null && _departamentos.Any() && _model.DepartmentId == 0)
+            {
+                _model.DepartmentId = _departamentos.First().Id;
+            }
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Error al cargar departamentos: {ex.Message}", Severity.Error);
+            _departamentos = new List<DepartmentDto>();
+        }
+    }
+
+    private void CargarTiposPorDefecto()
+    {
+        _tiposReunion = new List<MeetingTypeDto>
+        {
+            new() { Descripcion = "Comercial" },
+            new() { Descripcion = "Técnica" },
+            new() { Descripcion = "Administrativa" },
+            new() { Descripcion = "Otro" }
+        };
+        if (string.IsNullOrEmpty(_model.TipoReunion))
+        {
+            _model.TipoReunion = _tiposReunion.First().Descripcion;
+        }
+    }
 
     // ── Acciones ────────────────────────────────────────────────────────────
     private async Task GuardarBorrador()
@@ -201,9 +307,12 @@
         _isSaving = true;
         try
         {
-            // TODO: Conectar con el servicio correspondiente
-            await Task.Delay(800); // simula llamada async
+            await PostMeetingAsync(isDraft: true);
             _snackbar.Add("Borrador guardado correctamente.", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Error al guardar borrador: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -218,10 +327,13 @@
         _isSending = true;
         try
         {
-            // TODO: Conectar con el servicio correspondiente
-            await Task.Delay(800); // simula llamada async
+            await PostMeetingAsync(isDraft: false);
             _snackbar.Add("Solicitud enviada exitosamente.", Severity.Success);
-            _navigationManager.NavigateTo("/");
+            _navigationManager.NavigateTo("/reuniones");
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Error al enviar la reunión: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -229,11 +341,35 @@
         }
     }
 
+    private async Task PostMeetingAsync(bool isDraft)
+    {
+        var startDateTime = _model.Fecha.Value.Date + _model.Hora.Value;
+        var endDateTime = startDateTime.AddHours(1);
+
+        var requestBody = new MeetingCreateRequest
+        {
+            Motivo = _model.Motivo?.Trim() ?? string.Empty,
+            TipoReunion = _model.TipoReunion,
+            DepartmentId = _model.DepartmentId,
+            Observaciones = _model.Observaciones?.Trim() ?? string.Empty,
+            FechaHoraInicio = startDateTime.ToString("o"),
+            FechaHoraHasta = endDateTime.ToString("o"),
+            IsDraft = isDraft,
+        };
+
+        await MeetingService.CreateMeetingAsync(requestBody);
+    }
+
     private bool ValidarFormulario(bool showErrors)
     {
         if (string.IsNullOrWhiteSpace(_model.Motivo))
         {
             if (showErrors) _snackbar.Add("Ingrese el motivo de la reunión.", Severity.Warning);
+            return false;
+        }
+        if (_model.DepartmentId == 0)
+        {
+            if (showErrors) _snackbar.Add("Seleccione un departamento.", Severity.Warning);
             return false;
         }
         if (_model.Fecha is null)
@@ -253,7 +389,8 @@
     private sealed class MeetingRequestModel
     {
         public string Motivo { get; set; } = string.Empty;
-        public string TipoReunion { get; set; } = "Comercial";
+        public string TipoReunion { get; set; } = string.Empty;
+        public int DepartmentId { get; set; } = 0;
         public DateTime? Fecha { get; set; }
         public TimeSpan? Hora { get; set; }
         public string Observaciones { get; set; } = string.Empty;

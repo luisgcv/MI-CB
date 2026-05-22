@@ -85,6 +85,7 @@ public static class MauiProgram
 
         // Servicio de login/logout
         builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<MeetingService>();
        // builder.Services.AddScoped<IAddressService, AddressService>();
 
         return builder.Build();

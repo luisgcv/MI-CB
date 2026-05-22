@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
+import { MeetingsModule } from './modules/meetings/meetings.module';
 
 import { ProfileModule } from './modules/profile/profile.module';
 
@@ -35,6 +36,7 @@ import { ProfileModule } from './modules/profile/profile.module';
 
         AuthModule,
         ProfileModule,
+        MeetingsModule,
   ],
 
   controllers: [AppController],

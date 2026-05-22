@@ -3,8 +3,12 @@
 @using MudBlazor
 @using MauiStore.Shared.Services
 @using MauiStore.Shared.Components
+@using MauiStore.Web.Services
+@using System.Net.Http.Json
 @inject IAuthService Auth
 @inject NavigationManager Nav
+@inject ITokenStorageService TokenStorageService
+@inject HttpClient Http
 
 <style>
     .menu-card {
@@ -123,6 +127,39 @@
 
 @code {
     private string UserName = "Juan";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await TokenStorageService.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:3000/users-information");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                var response = await Http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    var userInfo = await response.Content.ReadFromJsonAsync<UserInfoResponse>();
+                    if (userInfo != null && !string.IsNullOrEmpty(userInfo.Nombre))
+                    {
+                        UserName = userInfo.Nombre;
+                    }
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Fallback en caso de error
+            UserName = "Usuario";
+        }
+    }
+
+    private class UserInfoResponse
+    {
+        public string? Nombre { get; set; }
+    }
 
     private List<MenuItem> MenuItems = new()
     {

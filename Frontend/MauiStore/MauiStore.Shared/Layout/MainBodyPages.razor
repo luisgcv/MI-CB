@@ -16,9 +16,9 @@
         <NavMenu />
     </MudDrawer>
 
-    <MudMainContent Class="pt-0" Style="background-color: #fdf5e6; min-height: 100vh; display: flex; flex-direction: column;">
-        <MudContainer MaxWidth="MaxWidth.Large" Class="pa-0 flex-grow-1" Style="display: flex; flex-direction: column;">
-            <div class="d-flex justify-space-between align-center px-4" style="padding-top: 8px;">
+    <MudMainContent Class="pt-0" Style="background-color: #fdf5e6; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden;">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="pa-0 flex-grow-1" Style="display: flex; flex-direction: column; overflow: hidden;">
+            <div class="d-flex justify-space-between align-center px-4" style="padding-top: 8px; flex-shrink: 0;">
                 <MudIconButton Icon="@Icons.Material.Filled.Menu" 
                                Color="Color.Default" 
                                Size="Size.Large"
@@ -29,16 +29,16 @@
                                Size="Size.Large" 
                                Href="/Configuracion/MiPerfil" />
             </div>
-            
+
             <!-- Contenido principal que ocupa todo el espacio disponible -->
-            <div style="flex: 1;">
+            <div style="flex: 1; overflow-y: auto;">
                 @ChildContent
             </div>
         </MudContainer>
 
         @if (ShowBottomNav)
         {
-            <div style="margin-top: auto;">
+            <div style="margin-top: auto; flex-shrink: 0;">
                 <BottomNavMenu>
                     <BottomNavMenuItem Href="/" Icon="@Icons.Material.TwoTone.Cottage" IconColor="Color.Success" Title="Inicio" />
                     <AuthorizeView>
