@@ -18,7 +18,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async login(identificationId: string, password: string) {
+  async login(identificationId: string, password: string, ip: string) {
     const user = await this.userRepository.findOne({
       where: {
         identificationId,
@@ -34,6 +34,7 @@ export class AuthService {
     }
 
     user.lastLogin = new Date();
+    user.lastAccessIp = ip;
 
     await Promise.all([
       this.userRepository.save(user),
