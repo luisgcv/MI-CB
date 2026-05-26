@@ -1,0 +1,152 @@
+@page "/ordenes-compra"
+@using MudBlazor
+@using MauiStore.Shared.Layout
+@using MauiStore.Shared.Services
+@using MauiStore.Shared.Models.PurchaseOrders
+@inject PurchaseOrderService PurchaseOrderService
+@inject ISnackbar _snackbar
+@inject NavigationManager Nav
+
+@layout MainLayoutPages
+
+<RequireAuth ReturnUrl="/ordenes-compra">
+    <div class="pa-4">
+
+        <MudPaper Class="pa-4 mb-4 elevation-1" Style="border-radius: 12px;">
+            <MudText Typo="Typo.h5" Class="mb-1" Style="color: #2e7d32;">Órdenes de compra</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Consulta tus órdenes de compra y su estado
+            </MudText>
+        </MudPaper>
+
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-center mt-6">
+                <MudProgressCircular Size="Size.Large" Indeterminate="true" />
+            </div>
+        }
+        else if (_hasError)
+        {
+            <MudAlert Severity="Severity.Error" Style="border-radius: 8px;">@_errorMessage</MudAlert>
+        }
+        else if (!_orders.Any())
+        {
+            <MudPaper Class="pa-6 mt-4 text-center elevation-1" Style="border-radius: 12px;">
+                <MudIcon Icon="@Icons.Material.TwoTone.ShoppingCart"
+                         Size="Size.Large"
+                         Style="color:#bdbdbd; font-size:4rem;" />
+                <MudText Typo="Typo.h6" Class="mt-2">No hay órdenes</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    No se encontraron órdenes de compra registradas.
+                </MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <div class="d-flex flex-column" style="gap: 12px;">
+                @foreach (var order in _orders)
+                {
+                    var borderColor = GetStatusColor(order.Status);
+                    <MudPaper Elevation="1"
+                          Style="@($"border-radius:12px; border-left: 4px solid {borderColor}; padding: 16px; cursor: pointer;")"
+                          @onclick="@(() => Nav.NavigateTo($"/ordenes-compra/{order.Id}"))">
+
+                        <div class="d-flex justify-space-between align-start mb-2">
+                            <div>
+                                <MudText Typo="Typo.subtitle1" Class="fw-bold">@order.Id</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@order.CreatedBy</MudText>
+                            </div>
+                            <MudChip T="string"
+                                     Color="@GetStatusChipColor(order.Status)"
+                                     Size="Size.Small"
+                                     Variant="Variant.Filled">
+                                @order.Status
+                            </MudChip>
+                        </div>
+
+                        <MudGrid Spacing="1" Class="mb-2">
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Sucursal</MudText>
+                                <MudText Typo="Typo.body2">@order.Branch</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Fecha requerida</MudText>
+                                <MudText Typo="Typo.body2">
+                                    @(order.RequiredAt.HasValue ? order.RequiredAt.Value.ToString("dd MMM yyyy") : "-")
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Creada</MudText>
+                                <MudText Typo="Typo.body2">@order.CreatedAt.ToString("dd MMM yyyy")</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Monto total</MudText>
+                                <MudText Typo="Typo.body2" Class="fw-bold">
+                                    ₡@order.Total.ToString("N0")
+                                </MudText>
+                            </MudItem>
+                        </MudGrid>
+
+                    </MudPaper>
+                }
+            </div>
+        }
+
+    </div>
+</RequireAuth>
+
+@code {
+    private bool _isLoading;
+    private bool _hasError;
+    private string _errorMessage = string.Empty;
+    private List<PurchaseOrderSummaryDto> _orders = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _hasError = false;
+        try
+        {
+            var result = await PurchaseOrderService.GetOrdersAsync();
+            if (result.Success && result.Data is not null)
+                _orders = result.Data;
+            else
+            {
+                _hasError = true;
+                _errorMessage = result.Message ?? "No se pudieron cargar las órdenes.";
+            }
+        }
+        catch (Exception)
+        {
+            _hasError = true;
+            _errorMessage = "No se pudieron cargar las órdenes de compra.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetStatusColor(string status) => status switch
+    {
+        "Pendiente"   => "#f39c12",
+        "Aprobada"    => "#46a441",
+        "Rechazada"   => "#dc3545",
+        "En tránsito" => "#3498db",
+        "Recibida"    => "#018065",
+        _             => "#9e9e9e"
+    };
+
+    private Color GetStatusChipColor(string status) => status switch
+    {
+        "Aprobada"  => Color.Success,
+        "Rechazada" => Color.Error,
+        "Recibida"  => Color.Success,
+        _           => Color.Default
+    };
+}

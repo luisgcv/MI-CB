@@ -32,7 +32,9 @@ builder.Services.AddBlazoredLocalStorage();
 
 // Preferencias existentes
 builder.Services.AddScoped<ClientPreferenceManager>();
-builder.Services.AddScoped<ProfileService>();builder.Services.AddScoped<MeetingService>();
+builder.Services.AddScoped<ProfileService>();
+builder.Services.AddScoped<MeetingService>();
+builder.Services.AddScoped<PurchaseOrderService>();
 // Servicios espec�ficos compartidos
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 builder.Services.AddScoped<IFileService, WebFileService>();
