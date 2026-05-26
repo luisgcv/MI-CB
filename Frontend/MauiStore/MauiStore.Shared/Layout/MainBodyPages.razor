@@ -17,19 +17,24 @@
     </MudDrawer>
 
     <MudMainContent Class="pt-0" Style="background-image: url('/images/FondoApp.jpg'); background-size: cover; background-position: center; background-attachment: fixed; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; background-color: #fdf5e6;">
+
+        <!-- Header fuera del contenedor para que el degradado cubra todo el ancho -->
+        <div class="d-flex justify-space-between align-center px-4"
+             style="padding-top: 8px; flex-shrink: 0; width: 100%;
+                    background: linear-gradient(180deg, rgba(0,0,0,0.28) 0%, transparent 100%);">
+
+            <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                           Size="Size.Large"
+                           Style="color: white; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));"
+                           OnClick="DrawerToggle" />
+
+            <MudIconButton Icon="@Icons.Material.TwoTone.AccountCircle"
+                           Size="Size.Large"
+                           Style="color: white; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));"
+                           Href="/Configuracion/MiPerfil" />
+        </div>
+
         <MudContainer MaxWidth="MaxWidth.Large" Class="pa-0 flex-grow-1" Style="display: flex; flex-direction: column; overflow: hidden;">
-            <div class="d-flex justify-space-between align-center px-4" style="padding-top: 8px; flex-shrink: 0;">
-                <MudIconButton Icon="@Icons.Material.Filled.Menu" 
-                               Color="Color.Default" 
-                               Size="Size.Large"
-                               OnClick="DrawerToggle" />
-
-                <MudIconButton Icon="@Icons.Material.TwoTone.AccountCircle" 
-                               Color="Color.Default" 
-                               Size="Size.Large" 
-                               Href="/Configuracion/MiPerfil" />
-            </div>
-
             <!-- Contenido principal que ocupa todo el espacio disponible -->
             <div style="flex: 1; overflow-y: auto;">
                 @ChildContent
