@@ -18,6 +18,8 @@ using MauiStore.Shared.Infrastructure.Interfaces;                               
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddScoped<ContractService>();
+
 // Blazor Server (interactividad)
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

@@ -1,0 +1,265 @@
+@page "/contratos"
+@using MudBlazor
+@using MauiStore.Shared.Layout
+@using MauiStore.Shared.Services
+@using MauiStore.Shared.Dtos
+@inject ContractService ContractService
+@inject IJSRuntime JS
+@inject ISnackbar _snackbar
+
+@layout MainLayoutPages
+
+<RequireAuth ReturnUrl="/contratos">
+    <div class="pa-4">
+
+        <MudPaper Class="pa-4 mb-4 elevation-1" Style="border-radius: 12px;">
+            <MudText Typo="Typo.h5" Class="mb-1" Style="color: #2e7d32;">Mis contratos</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Contratos vigentes e históricos con la empresa
+            </MudText>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 mb-4 elevation-1" Style="border-radius: 12px;">
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudSelect T="string"
+                               @bind-Value="_filtroEstado"
+                               Label="Estado"
+                               Variant="Variant.Outlined"
+                               FullWidth="@true"
+                               Margin="Margin.Dense"
+                               Class="mb-2"
+                               AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem T="string" Value="@(null as string)">Todos</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Vigente")">Vigente</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Finalizado")">Finalizado</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudSelect T="string"
+                               @bind-Value="_filtroTipo"
+                               Label="Tipo de contrato"
+                               Variant="Variant.Outlined"
+                               FullWidth="@true"
+                               Margin="Margin.Dense"
+                               Class="mb-2"
+                               AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem T="string" Value="@(null as string)">Todos</MudSelectItem>
+                        @foreach (var tipo in _tiposDisponibles)
+                        {
+                            <MudSelectItem T="string" Value="@tipo">@tipo</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="_filtroFechaDesde"
+                                   Label="Desde"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="@true"
+                                   Margin="Margin.Dense"
+                                   Editable="@true"
+                                   AdornmentColor="Color.Default" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="_filtroFechaHasta"
+                                   Label="Hasta"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="@true"
+                                   Margin="Margin.Dense"
+                                   Editable="@true"
+                                   AdornmentColor="Color.Default" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudButton FullWidth="@true"
+                               Variant="Variant.Outlined"
+                               OnClick="LimpiarFiltros"
+                               Style="border-radius: 8px; text-transform: none;">
+                        Limpiar filtros
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-center mt-6">
+                <MudProgressCircular Size="Size.Large" Indeterminate="true" />
+            </div>
+        }
+        else if (_hasError)
+        {
+            <MudAlert Severity="Severity.Error" Style="border-radius: 8px;">@_errorMessage</MudAlert>
+        }
+        else if (!ContractsFiltrados.Any())
+        {
+            <MudPaper Class="pa-6 mt-4 text-center elevation-1" Style="border-radius: 12px;">
+                <MudIcon Icon="@Icons.Material.TwoTone.Description" Size="Size.Large" Style="color:#bdbdbd; font-size:4rem;" />
+                <MudText Typo="Typo.h6" Class="mt-2">No hay contratos</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    No se encontraron contratos con los filtros seleccionados.
+                </MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <div class="d-flex flex-column" style="gap: 12px;">
+                @foreach (var contrato in ContractsFiltrados)
+                {
+                    var borderColor = contrato.Estado == "Vigente" ? "#2e7d32" : "#9e9e9e";
+                    <MudPaper Elevation="1" Style="@($"border-radius:12px; border-left: 4px solid {borderColor}; padding: 16px;")">
+
+                        <div class="d-flex justify-space-between align-start mb-2">
+                            <div>
+                                <MudText Typo="Typo.subtitle1" Class="fw-bold">@contrato.Consecutivo</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@contrato.TipoContrato</MudText>
+                            </div>
+                            <MudChip T="string"
+                                     Color="@(contrato.Estado == "Vigente" ? Color.Success : Color.Default)"
+                                     Size="Size.Small"
+                                     Variant="Variant.Filled">
+                                @contrato.Estado
+                            </MudChip>
+                        </div>
+
+                        <MudGrid Spacing="1" Class="mb-2">
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Inicio</MudText>
+                                <MudText Typo="Typo.body2">@contrato.FechaInicio.ToString("dd MMM yyyy")</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @(contrato.Estado == "Vigente" ? "Vence" : "Finalizó")
+                                </MudText>
+                                <MudText Typo="Typo.body2">@contrato.FechaHasta.ToString("dd MMM yyyy")</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Sucursal</MudText>
+                                <MudText Typo="Typo.body2">@contrato.Sucursal</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Monto mensual</MudText>
+                                <MudText Typo="Typo.body2" Class="fw-bold">
+                                    ₡@contrato.MontoMensual.ToString("N0")
+                                </MudText>
+                            </MudItem>
+                        </MudGrid>
+
+                        @if (contrato.Estado == "Vigente")
+                        {
+                            <MudProgressLinear Value="@contrato.PorcentajeTranscurrido"
+                                               Color="Color.Success"
+                                               Rounded="true"
+                                               Class="mb-1"
+                                               Style="height: 6px;" />
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
+                                @contrato.DiasRestantes días restantes · @contrato.PorcentajeTranscurrido% transcurrido
+                            </MudText>
+                        }
+
+                        <MudButton FullWidth="@true"
+                                   Variant="Variant.Outlined"
+                                   StartIcon="@Icons.Material.Filled.Download"
+                                   Disabled="@(_downloadingId == contrato.Consecutivo)"
+                                   OnClick="@(() => DescargarPdf(contrato.Consecutivo))"
+                                   Style="border-radius: 8px; text-transform: none;">
+                            @if (_downloadingId == contrato.Consecutivo)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            }
+                            Descargar PDF
+                        </MudButton>
+
+                    </MudPaper>
+                }
+            </div>
+        }
+
+    </div>
+</RequireAuth>
+
+@code {
+    private bool _isLoading;
+    private bool _hasError;
+    private string _errorMessage = string.Empty;
+    private string _downloadingId = string.Empty;
+    private List<ContractSummaryDto> _contracts = new();
+
+    private string? _filtroEstado = null;
+    private string? _filtroTipo = null;
+    private DateTime? _filtroFechaDesde;
+    private DateTime? _filtroFechaHasta;
+
+    private IEnumerable<string> _tiposDisponibles =>
+        _contracts.Select(c => c.TipoContrato).Distinct().OrderBy(t => t);
+
+    private IEnumerable<ContractSummaryDto> ContractsFiltrados
+    {
+        get
+        {
+            var result = _contracts.AsEnumerable();
+
+            if (!string.IsNullOrEmpty(_filtroEstado))
+                result = result.Where(c => c.Estado == _filtroEstado);
+
+            if (!string.IsNullOrEmpty(_filtroTipo))
+                result = result.Where(c => c.TipoContrato == _filtroTipo);
+
+            if (_filtroFechaDesde.HasValue)
+                result = result.Where(c => c.FechaInicio >= _filtroFechaDesde.Value);
+
+            if (_filtroFechaHasta.HasValue)
+                result = result.Where(c => c.FechaHasta <= _filtroFechaHasta.Value);
+
+            return result;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _hasError = false;
+        try
+        {
+            _contracts = await ContractService.GetContractsAsync();
+        }
+        catch (Exception)
+        {
+            _hasError = true;
+            _errorMessage = "No se pudieron cargar los contratos.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void LimpiarFiltros()
+    {
+        _filtroEstado = null;
+        _filtroTipo = null;
+        _filtroFechaDesde = null;
+        _filtroFechaHasta = null;
+    }
+
+    private async Task DescargarPdf(string consecutivo)
+    {
+        _downloadingId = consecutivo;
+        try
+        {
+            await ContractService.DownloadPdfAsync(consecutivo, JS);
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Error: {ex.Message} | {ex.GetType().Name}", Severity.Error);
+        }
+        finally
+        {
+            _downloadingId = string.Empty;
+        }
+    }
+}

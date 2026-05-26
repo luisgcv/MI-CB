@@ -96,6 +96,13 @@
         function AddModalToHistory(url) {
             window.history.pushState("MauiStore", "Modal", url);
         }
+
+        function downloadPdf(base64, filename) {
+            const link = document.createElement('a');
+            link.href = 'data:application/pdf;base64,' + base64;
+            link.download = filename;
+            link.click();
+        }
     </script>
     <script src="_content/MauiStore.Shared/js/google-map.js"></script>
     <script src="_framework/blazor.webview.js" autostart="false"></script>

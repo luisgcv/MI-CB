@@ -79,6 +79,7 @@
   <ItemGroup>
     <Folder Include="Data\" />
     <Folder Include="Pages\Meetings\" />
+    <Folder Include="Pages\Contracts\" />
     <Folder Include="Views\" />
   </ItemGroup>
 

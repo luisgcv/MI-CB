@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { MeetingsModule } from './modules/meetings/meetings.module';
+import { ContractsModule } from './modules/contracts/contracts.module';
 
 import { ProfileModule } from './modules/profile/profile.module';
 
@@ -37,6 +38,7 @@ import { ProfileModule } from './modules/profile/profile.module';
         AuthModule,
         ProfileModule,
         MeetingsModule,
+        ContractsModule,
   ],
 
   controllers: [AppController],
