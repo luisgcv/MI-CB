@@ -4,12 +4,16 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 
 import { UserEntity } from '../../database/entities/user.entity';
+import { SessionLogEntity } from '../../database/entities/session-log.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
+
+    @InjectRepository(SessionLogEntity)
+    private sessionLogRepository: Repository<SessionLogEntity>,
 
     private jwtService: JwtService,
   ) {}
@@ -31,7 +35,15 @@ export class AuthService {
 
     user.lastLogin = new Date();
 
-    await this.userRepository.save(user);
+    await Promise.all([
+      this.userRepository.save(user),
+      this.sessionLogRepository.save(
+        this.sessionLogRepository.create({
+          identificationId,
+          loginDate: new Date(),
+        }),
+      ),
+    ]);
 
     const payload = {
       sub: user.identificationId,

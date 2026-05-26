@@ -6,13 +6,14 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 
 import { UserEntity } from '../../database/entities/user.entity';
+import { SessionLogEntity } from '../../database/entities/session-log.entity';
 
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity]),
+    TypeOrmModule.forFeature([UserEntity, SessionLogEntity]),
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
@@ -23,7 +24,7 @@ import { JwtStrategy } from './jwt.strategy';
     }),
   ],
 
-    providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy],
 
   controllers: [AuthController],
 })
