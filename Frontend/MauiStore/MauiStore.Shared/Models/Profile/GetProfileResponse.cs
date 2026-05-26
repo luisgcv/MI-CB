@@ -1,31 +1,28 @@
-﻿namespace MauiStore.Shared.Models.Profile
+﻿using System.Text.Json.Serialization;
+
+namespace MauiStore.Shared.Models.Profile
 {
-    /// <summary>
-    /// Respuesta del endpoint GET api/profile.
-    /// Contiene la información del usuario autenticado
-    /// combinada desde varias tablas de la BD.
-    /// </summary>
     public sealed class GetProfileResponse
     {
-        /// <summary>Cédula del usuario (solo lectura, viene del JWT).</summary>
+        [JsonPropertyName("identificationNumber")]
         public string IdentificationNumber { get; set; } = string.Empty;
 
-        /// <summary>Nombre completo del usuario (TBL_PROV_USUARIOS_INFORMACION.NOMBRE).</summary>
+        [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>Teléfono del usuario (TBL_PROV_USUARIOS_INFORMACION.TELEFONO).</summary>
+        [JsonPropertyName("phone")]
         public string Phone { get; set; } = string.Empty;
 
-        /// <summary>Correo de notificación (TBL_PROV_PROVEEDORES_DEPARTAMENTOS_USUARIO.CORREO_NOTIFICACION).</summary>
+        [JsonPropertyName("email")]
         public string Email { get; set; } = string.Empty;
 
-        /// <summary>Nombre de la empresa proveedora (TBL_PROV_PROVEEDORES.NOMBRE_PROVEEDOR).</summary>
+        [JsonPropertyName("company")]
         public string Company { get; set; } = string.Empty;
 
-        /// <summary>Nombre del departamento (TBL_PROV_DEPARTAMENTOS.NOMBRE_DEPARTAMENTO).</summary>
+        [JsonPropertyName("department")]
         public string Department { get; set; } = string.Empty;
 
-        /// <summary>Puesto o rol del usuario (TBL_PROV_PROVEEDORES_DEPARTAMENTOS_USUARIO.PUESTO).</summary>
+        [JsonPropertyName("position")]
         public string Position { get; set; } = string.Empty;
     }
 }

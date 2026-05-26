@@ -1,4 +1,5 @@
 ﻿@page "/Configuracion/MiPerfil"
+@layout MauiStore.Shared.Layout.MainLayoutPages
 
 @attribute [Authorize]
 
@@ -6,7 +7,6 @@
 @inject ISnackbar Snackbar
 
 @using MauiStore.Shared.Models.Profile
-@* @ @using CbEnLinea.Api.Common.Models.Stores@ Comentao de momento *@
 @using MauiStore.Shared.Services
 @using Microsoft.AspNetCore.Authorization
 @using MudBlazor
@@ -20,37 +20,41 @@
         padding: 16px;
         max-width: 900px;
         margin: 0 auto;
-        background-color: white;
         box-sizing: border-box;
-        height: 100dvh;
-        overflow: hidden;
-        padding-top: calc(16px + env(safe-area-inset-top));
+        padding-top: calc(4px + env(safe-area-inset-top));
         padding-bottom: calc(16px + env(safe-area-inset-bottom) + var(--app-bottom-bar));
     }
 
     .profile-tabs {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.10);
     }
 
-        .profile-tabs .mud-tabs-toolbar {
-            flex: 0 0 auto;
-        }
-
         .profile-tabs .mud-tabs-panels {
-            flex: 1 1 auto;
-            min-height: 0;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
 
+    .section-title-personal {
+        color: #46a441;
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+        margin-top: 4px;
+    }
+
+    .section-title-org {
+        color: #e65c00;
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+        margin-top: 16px;
+    }
 
     @@media (max-height: 740px) {
-
         .page-wrap {
-            margin-top: 128px;
             padding: 12px;
             padding-top: calc(12px + env(safe-area-inset-top));
             padding-bottom: 128px;
@@ -59,178 +63,198 @@
 </style>
 
 <RequireAuth ReturnUrl="/Configuracion/MiPerfil">
-<div class="page-wrap">
+    <div class="page-wrap">
 
-    <MudTabs Rounded="true" PanelClass="pa-4" Class="profile-tabs">
-        <MudTabPanel Text="Mi Perfil">
+        <MudTabs Rounded="true" PanelClass="pa-4" Class="profile-tabs">
 
-            @if (isLoading)
-            {
-                <MudProgressCircular Indeterminate="true" />
-            }
-            else
-            {
-                <MudForm @ref="profileForm">
+            <!-- ── TAB: Mi Perfil ── -->
+            <MudTabPanel Text="Mi Perfil">
+
+                @if (isLoading)
+                {
+                    <MudProgressCircular Indeterminate="true" />
+                }
+                else
+                {
+                    <MudForm @ref="profileForm">
+
+                        <!-- Información personal -->
+                        <div class="section-title-personal">Información personal</div>
+
+                        <MudGrid Spacing="2">
+
+                            <MudItem xs="12">
+                                <MudTextField T="string"
+                                              Label="Nombre completo"
+                                              Value="@profile.Name"
+                                              ReadOnly="true"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.Lock"
+                                              AdornmentColor="Color.Default" />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField Label="Identificación"
+                                              Value="@profile.IdentificationNumber"
+                                              ReadOnly="true"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.Lock"
+                                              AdornmentColor="Color.Default" />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField T="string"
+                                              Label="Correo electrónico"
+                                              @bind-Value="profile.Email"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.Edit"
+                                              AdornmentColor="Color.Default" />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField T="string"
+                                              Label="Teléfono"
+                                              @bind-Value="profile.Phone"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.Edit"
+                                              AdornmentColor="Color.Default" />
+                            </MudItem>
+
+                        </MudGrid>
+
+                        <!-- Información organizacional -->
+                        <div class="section-title-org">Información organizacional</div>
+
+                        <MudGrid Spacing="2">
+
+                            <MudItem xs="12">
+                                <MudTextField Label="Empresa"
+                                              Value="@profile.Company"
+                                              ReadOnly="true"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.Lock"
+                                              AdornmentColor="Color.Default" />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField Label="Departamento"
+                                              Value="@profile.Department"
+                                              ReadOnly="true"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.Lock"
+                                              AdornmentColor="Color.Default" />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField Label="Puesto"
+                                              Value="@profile.Position"
+                                              ReadOnly="true"
+                                              Variant="Variant.Outlined"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.Lock"
+                                              AdornmentColor="Color.Default" />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           FullWidth="true"
+                                           OnClick="SaveProfile"
+                                           Disabled="isSaving"
+                                           Style="border-radius: 25px; padding: 10px;">
+                                    @if (isSaving)
+                                    {
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                            <span>Guardando...</span>
+                                        </MudStack>
+                                    }
+                                    else
+                                    {
+                                        <span>Guardar</span>
+                                    }
+                                </MudButton>
+                            </MudItem>
+
+                        </MudGrid>
+
+                    </MudForm>
+                }
+
+            </MudTabPanel>
+
+            <!-- ── TAB: Cambiar Contraseña ── -->
+            <MudTabPanel Text="Cambiar Contraseña">
+
+                <MudForm @ref="passwordForm">
+
+                    <div class="section-title-personal">Cambiar contraseña</div>
 
                     <MudGrid Spacing="2">
+
                         <MudItem xs="12">
                             <MudTextField T="string"
-                                          Label="Nombre completo"
-                                          @bind-Value="profile.Name"
+                                          Label="Contraseña actual"
+                                          InputType="InputType.Password"
+                                          @bind-Value="passwordModel.CurrentPassword"
                                           Required="true"
                                           Variant="Variant.Outlined" />
                         </MudItem>
 
                         <MudItem xs="12">
-                            <MudTextField Label="Identificación"
-                                          Value="@profile.IdentificationNumber"
-                                          ReadOnly="true"
-                                          Variant="Variant.Outlined" />
-                        </MudItem>
-
-                        <MudItem xs="12">
-                            <MudTextField Label="Correo electrónico"
-                                          Value="@profile.Email"
-                                          ReadOnly="true"
+                            <MudTextField T="string"
+                                          Label="Nueva contraseña"
+                                          InputType="InputType.Password"
+                                          @bind-Value="passwordModel.NewPassword"
+                                          Required="true"
                                           Variant="Variant.Outlined" />
                         </MudItem>
 
                         <MudItem xs="12">
                             <MudTextField T="string"
-                                          Label="Teléfono"
-                                          @bind-Value="profile.Phone"
+                                          Label="Confirmar contraseña"
+                                          InputType="InputType.Password"
+                                          @bind-Value="confirmPassword"
+                                          Required="true"
                                           Variant="Variant.Outlined" />
                         </MudItem>
-
-                        <MudItem xs="12">
-                            <MudTextField Label="Empresa"
-                                          Value="@profile.Company"
-                                          ReadOnly="true"
-                                          Variant="Variant.Outlined" />
-                        </MudItem>
-
-                        <MudItem xs="12">
-                            <MudTextField Label="Departamento"
-                                          Value="@profile.Department"
-                                          ReadOnly="true"
-                                          Variant="Variant.Outlined" />
-                        </MudItem>
-
-                        <MudItem xs="12">
-                            <MudTextField Label="Puesto"
-                                          Value="@profile.Position"
-                                          ReadOnly="true"
-                                          Variant="Variant.Outlined" />
-                        </MudItem>
-
-
-                        @* 
-                        <MudItem xs="12">
-                            <MudSwitch T="bool"
-                                       Label="Factura electrónica"
-                                       ValueChanged="OnElectronicInvoiceChanged"
-                                       Value="profile.ElectronicInvoiceRequired"
-                                       Color="Color.Primary" />
-
-                        </MudItem>
-                        *@
-
 
                         <MudItem xs="12">
                             <MudButton Variant="Variant.Filled"
                                        Color="Color.Primary"
                                        FullWidth="true"
-                                       OnClick="SaveProfile"
-                                       Disabled="isSaving">
-                                @if (isSaving)
+                                       OnClick="ChangePassword"
+                                       Disabled="isChangingPassword"
+                                       Style="border-radius: 25px; padding: 10px;">
+                                @if (isChangingPassword)
                                 {
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                        <MudProgressCircular Size="Size.Small"
-                                                             Indeterminate="true" />
+                                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
                                         <span>Guardando...</span>
                                     </MudStack>
                                 }
                                 else
                                 {
-                                    <span>Guardar Cambios</span>
+                                    <span>Guardar</span>
                                 }
-
                             </MudButton>
                         </MudItem>
 
                     </MudGrid>
 
                 </MudForm>
-            }
 
-        </MudTabPanel>
+            </MudTabPanel>
 
-        <MudTabPanel Text="Cambiar Contraseña">
+        </MudTabs>
 
-            <MudForm @ref="passwordForm">
-
-                <MudGrid Spacing="2">
-
-                    <MudItem xs="12">
-                        <MudTextField T="string"
-                                      Label="Contraseña actual"
-                                      InputType="InputType.Password"
-                                      @bind-Value="passwordModel.CurrentPassword"
-                                      Required="true"
-                                      Variant="Variant.Outlined" />
-                    </MudItem>
-
-                    <MudItem xs="12">
-                        <MudTextField T="string"
-                                      Label="Nueva contraseña"
-                                      InputType="InputType.Password"
-                                      @bind-Value="passwordModel.NewPassword"
-                                      Required="true"
-                                      Variant="Variant.Outlined" />
-                    </MudItem>
-
-                    <MudItem xs="12">
-                        <MudTextField T="string"
-                                      Label="Confirmar contraseña"
-                                      InputType="InputType.Password"
-                                      @bind-Value="confirmPassword"
-                                      Required="true"
-                                      Variant="Variant.Outlined" />
-                    </MudItem>
-
-
-
-
-                    <MudItem xs="12">
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   FullWidth="true"
-                                   OnClick="ChangePassword"
-                                   Disabled="isChangingPassword">
-                            @if (isChangingPassword)
-                            {
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                    <MudProgressCircular Size="Size.Small"
-                                                         Indeterminate="true" />
-                                    <span>Guardando...</span>
-                                </MudStack>
-                            }
-                            else
-                            {
-                                <span>Guardar Cambios</span>
-                            }
-                        </MudButton>
-                    </MudItem>
-
-                </MudGrid>
-
-            </MudForm>
-
-        </MudTabPanel>
-
-    </MudTabs>
-
-</div>
+    </div>
 </RequireAuth>
 
 @code {
@@ -246,24 +270,10 @@
     private ChangePasswordRequest passwordModel = new();
     private string confirmPassword = "";
 
-    // stores
-    //private List<StoreDto> stores = new();
-    //private bool isStoresLoading;
-    //private string? storesErrorMessage;
-
-
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(
-            LoadProfile()
-        );
+        await Task.WhenAll(LoadProfile());
     }
-
-
-    /*private void OnElectronicInvoiceChanged(bool value)
-    {
-        profile.ElectronicInvoiceRequired = value;
-    }*/
 
     private async Task LoadProfile()
     {
@@ -294,56 +304,34 @@
 
     private async Task SaveProfile()
     {
-        if (profileForm is null)
-            return;
+        if (profileForm is null) return;
 
         await profileForm.Validate();
-
-        if (!profileForm.IsValid)
-            return;
+        if (!profileForm.IsValid) return;
 
         isSaving = true;
-
         await Task.Yield();
 
-        /*var updateRequest = new UpdateProfileRequest
-        {
-            Firstname = profile.Firstname,
-            Lastname = profile.Lastname,
-            MobilePhone = profile.MobilePhone,
-            Phone = profile.Phone,
-            StoreId = profile.StoreId,
-            ElectronicInvoiceRequired = profile.ElectronicInvoiceRequired
-        };*/
-
-        // Como solo Name y Phone son editables:
         var result = await profileService.UpdateProfileAsync(new UpdateProfileRequest
         {
             Name = profile.Name,
             Phone = profile.Phone
         });
 
-        if (!result.Success)
-        {
-            Snackbar.Add(result.Message ?? "Error al actualizar", Severity.Error);
-        }
-        else
-        {
-            Snackbar.Add("Perfil actualizado correctamente", Severity.Success);
-        }
+        Snackbar.Add(
+            result.Success ? "Perfil actualizado correctamente" : result.Message ?? "Error al actualizar",
+            result.Success ? Severity.Success : Severity.Error
+        );
 
         isSaving = false;
     }
 
     private async Task ChangePassword()
     {
-        if (passwordForm is null)
-            return;
+        if (passwordForm is null) return;
 
         await passwordForm.Validate();
-
-        if (!passwordForm.IsValid)
-            return;
+        if (!passwordForm.IsValid) return;
 
         if (passwordModel.NewPassword != confirmPassword)
         {

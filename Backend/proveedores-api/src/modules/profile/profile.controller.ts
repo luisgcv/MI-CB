@@ -5,13 +5,11 @@ import { ProfileService } from './profile.service';
 @Controller('profile')
 @UseGuards(JwtAuthGuard)
 export class ProfileController {
-    constructor(private readonly profileService: ProfileService) { }
+  constructor(private readonly profileService: ProfileService) {}
 
-    @Get()
-    getProfile(@Req() req: any) {
-        // El JWT guard pone el usuario en req.user
-        // En auth.service.ts el payload fue: { sub: user.identificationId }
-        const identificationId: string = req.user.sub;
-        return this.profileService.getProfile(identificationId);
-    }
+  @Get()
+  getProfile(@Req() req: any) {
+    const identificationId: string = req.user.userId;
+    return this.profileService.getProfile(identificationId);
+  }
 }

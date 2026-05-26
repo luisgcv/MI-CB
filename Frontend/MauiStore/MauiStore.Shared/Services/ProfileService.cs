@@ -46,6 +46,7 @@ public sealed class ProfileService : BaseApiService
 
             if (response.IsSuccessStatusCode)
             {
+
                 var data = await response.Content
                     .ReadFromJsonAsync<GetProfileResponse>(cancellationToken: ct);
 
