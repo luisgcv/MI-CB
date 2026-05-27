@@ -80,6 +80,7 @@
     <Folder Include="Data\" />
     <Folder Include="Pages\Meetings\" />
     <Folder Include="Pages\Contracts\" />
+    <Folder Include="Pages\Dynamics\" />
     <Folder Include="Views\" />
   </ItemGroup>
 

@@ -86,7 +86,7 @@ public static class MauiProgram
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<MeetingService>();
 
-
+        builder.Services.AddScoped<DynamicsService>();
         builder.Services.AddScoped<ProductoService>();
 
         // builder.Services.AddScoped<IAddressService, AddressService>();

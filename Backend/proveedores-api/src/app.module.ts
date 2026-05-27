@@ -9,7 +9,7 @@ import { MeetingsModule } from './modules/meetings/meetings.module';
 import { ContractsModule } from './modules/contracts/contracts.module';
 import { PurchaseOrdersModule } from './modules/purchase-orders/purchase-orders.module';
 import { ProductsModule } from './modules/products/products.module';
-
+import { DynamicsModule } from './modules/dynamics/dynamics.module';
 
 import { ProfileModule } from './modules/profile/profile.module';
 
@@ -44,6 +44,7 @@ import { ProfileModule } from './modules/profile/profile.module';
         ContractsModule,
         PurchaseOrdersModule,
           ProductsModule,
+        DynamicsModule,
   ],
 
   controllers: [AppController],

@@ -1,0 +1,197 @@
+@page "/dinamicas"
+@using MudBlazor
+@using MauiStore.Shared.Layout
+@using MauiStore.Shared.Services
+@using MauiStore.Shared.Models.Dynamics
+@inject DynamicsService DynamicsService
+@inject ISnackbar _snackbar
+@inject NavigationManager Nav
+
+@layout MainLayoutPages
+
+<RequireAuth ReturnUrl="/dynamics">
+    <div class="pa-4">
+
+        <MudPaper Class="pa-4 mb-4 elevation-1" Style="border-radius: 12px;">
+            <MudText Typo="Typo.h5" Class="mb-1" Style="color: #2e7d32;">
+                Dinámicas comerciales
+            </MudText>
+
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Consulta dinámicas activas e históricas
+            </MudText>
+        </MudPaper>
+
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-center mt-6">
+                <MudProgressCircular Size="Size.Large"
+                                     Indeterminate="true" />
+            </div>
+        }
+        else if (_hasError)
+        {
+            <MudAlert Severity="Severity.Error"
+                      Style="border-radius: 8px;">
+                @_errorMessage
+            </MudAlert>
+        }
+        else if (!_dynamics.Any())
+        {
+            <MudPaper Class="pa-6 mt-4 text-center elevation-1"
+                      Style="border-radius: 12px;">
+
+                <MudIcon Icon="@Icons.Material.Filled.LocalOffer"
+                         Size="Size.Large"
+                         Style="color:#bdbdbd; font-size:4rem;" />
+
+                <MudText Typo="Typo.h6" Class="mt-2">
+                    No hay dinámicas
+                </MudText>
+
+                <MudText Typo="Typo.body2"
+                         Color="Color.Secondary">
+
+                    No se encontraron dinámicas registradas.
+                </MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <div class="d-flex flex-column" style="gap: 12px;">
+
+                @foreach (var dynamicItem in _dynamics)
+                {
+                    var borderColor =
+                        dynamicItem.IsActive
+                        ? "#46a441"
+                        : "#9e9e9e";
+
+                    <MudPaper Elevation="1"
+                              Style="@($"border-radius:12px; border-left: 4px solid {borderColor}; padding: 16px; cursor: pointer;")"
+                              @onclick="@(() => Nav.NavigateTo($"/dinamicas/{dynamicItem.Id}"))">
+
+                        <div class="d-flex justify-space-between align-start mb-2">
+
+                            <div>
+                                <MudText Typo="Typo.subtitle1" Class="fw-bold">
+                                    @dynamicItem.Id
+                                </MudText>
+
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @dynamicItem.Type
+                                </MudText>
+                            </div>
+
+                            <MudChip T="string"
+                                     Color="@(dynamicItem.IsActive ? Color.Success : Color.Default)"
+                                     Size="Size.Small"
+                                     Variant="Variant.Filled">
+
+                                @(dynamicItem.IsActive ? "Activa" : "Finalizada")
+                            </MudChip>
+
+                        </div>
+
+                        <MudGrid Spacing="1" Class="mb-2">
+
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    Sucursal
+                                </MudText>
+
+                                <MudText Typo="Typo.body2">
+                                    @dynamicItem.Branch
+                                </MudText>
+                            </MudItem>
+
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    Monto total
+                                </MudText>
+
+                                <MudText Typo="Typo.body2" Class="fw-bold">
+                                    ₡@dynamicItem.Total.ToString("N0")
+                                </MudText>
+                            </MudItem>
+
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    Fecha inicio
+                                </MudText>
+
+                                <MudText Typo="Typo.body2">
+                                    @dynamicItem.StartDate.ToString("dd MMM yyyy")
+                                </MudText>
+                            </MudItem>
+
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    Fecha fin
+                                </MudText>
+
+                                <MudText Typo="Typo.body2">
+                                    @dynamicItem.EndDate.ToString("dd MMM yyyy")
+                                </MudText>
+                            </MudItem>
+
+                        </MudGrid>
+
+                    </MudPaper>
+                }
+
+            </div>
+        }
+
+    </div>
+</RequireAuth>
+
+@code {
+
+    private bool _isLoading;
+    private bool _hasError;
+
+    private string _errorMessage = string.Empty;
+
+    private List<DynamicSummaryDto> _dynamics = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _hasError = false;
+
+        try
+        {
+            var result = await DynamicsService.GetDynamicsAsync();
+
+            if (result.Success && result.Data is not null)
+            {
+                _dynamics = result.Data;
+            }
+            else
+            {
+                _hasError = true;
+
+                _errorMessage =
+                    result.Message
+                    ?? "No se pudieron cargar las dinámicas.";
+            }
+        }
+        catch (Exception)
+        {
+            _hasError = true;
+
+            _errorMessage =
+                "No se pudieron cargar las dinámicas.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

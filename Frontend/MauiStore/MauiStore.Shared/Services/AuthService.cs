@@ -76,17 +76,17 @@ namespace MauiStore.Shared.Services
                     var errorContent = await resp.Content.ReadAsStringAsync(ct);
                     if (errorContent.Contains("Usuario no existe"))
                     {
-                        return (false, "El usuario no existe.", null);
+                        return (false, "El usuario no existe", null);
                     }
 
                     if (errorContent.Contains("Unauthorized"))
                     {
-                        return (false, "Usuario o contraseña incorrectos.", null);
+                        return (false, "Usuario o contraseña incorrectos", null);
                     }
 
                     return (
                         false,
-                        "No fue posible iniciar sesión.",
+                        "No fue posible iniciar sesión",
                         null
                     );
                 }
