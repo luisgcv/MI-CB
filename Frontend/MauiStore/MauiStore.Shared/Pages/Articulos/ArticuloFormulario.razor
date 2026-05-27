@@ -1,0 +1,382 @@
+@page "/articulos"
+@page "/articulos/{sku?}"
+@layout MauiStore.Shared.Layout.MainLayoutPages
+
+@using System.Net.Http.Json
+@using MauiStore.Shared.Models.Productos
+
+@using Microsoft.AspNetCore.Components.Forms
+@using MudBlazor
+@using MauiStore.Shared.Services.Articulos
+@inject ProductoService ProductoService
+@inject NavigationManager NavigationManager
+@inject ProductoFormularioSessionService SessionService
+@inject ISnackbar Snackbar
+
+<style>
+    .product-page {
+        padding: 16px;
+    }
+
+    .section-card {
+        border-radius: 16px !important;
+        overflow: hidden;
+        box-shadow: 0 8px 22px rgba(0,0,0,.08) !important;
+        background: rgba(255,255,255,.96);
+        margin-bottom: 16px;
+    }
+
+    .section-header {
+        background: linear-gradient(90deg, rgba(70,164,65,.11), rgba(70,164,65,.03));
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(0,0,0,.06);
+    }
+
+    .section-title {
+        font-weight: 700;
+        color: #2e7d32;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .sticky-actions {
+        position: sticky;
+        bottom: 8px;
+        z-index: 5;
+        backdrop-filter: blur(6px);
+    }
+</style>
+
+<RequireAuth ReturnUrl="/articulos">
+    <div class="product-page">
+        <MudPaper Class="pa-4 mb-4 section-card" Elevation="0">
+            <div class="d-flex justify-space-between align-center flex-wrap gap-3">
+                <div>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color:#2e7d32;">
+                        @(IsEditMode ? "Editar artículo" : "Nuevo artículo")
+                    </MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Complete el formulario. Primero revise el resumen antes de confirmar.
+                    </MudText>
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack">
+                    Volver
+                </MudButton>
+            </div>
+        </MudPaper>
+
+        @if (_state.Cargando)
+        {
+            <MudPaper Class="pa-8 section-card text-center" Elevation="0">
+                <MudProgressCircular Indeterminate="true" Color="Color.Success" Size="Size.Large" />
+                <MudText Class="mt-4">Cargando catálogos y datos del producto...</MudText>
+            </MudPaper>
+        }
+        else
+        {
+            @if (!string.IsNullOrWhiteSpace(_state.Error))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">@_state.Error</MudAlert>
+            }
+
+            <MudForm @ref="_form">
+                <MudCard Class="section-card">
+                    <div class="section-header">
+                        <MudText Typo="Typo.h6" Class="section-title"><MudIcon Icon="@Icons.Material.Outlined.Info" Size="Size.Small" /> Información general</MudText>
+                    </div>
+                    <MudCardContent Class="pa-4">
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="_state.Formulario.IdSku" Label="SKU *" Variant="Variant.Outlined" Required="true" RequiredError="El SKU es obligatorio" Disabled="@IsEditMode" />
+                            </MudItem>
+                            <MudItem xs="12" md="8">
+                                <MudTextField @bind-Value="_state.Formulario.Descripcion" Label="Descripción" Variant="Variant.Outlined" Lines="3" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                <MudCard Class="section-card">
+                    <div class="section-header">
+                        <MudText Typo="Typo.h6" Class="section-title"><MudIcon Icon="@Icons.Material.Outlined.Category" Size="Size.Small" /> Clasificación y catálogos</MudText>
+                    </div>
+                    <MudCardContent Class="pa-4">
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudSelect T="string" @bind-Value="_state.Formulario.IdUnidadMedida" Label="Unidad de medida *" Variant="Variant.Outlined" Required="true" RequiredError="Seleccione una unidad de medida">
+                                    @foreach (var item in _state.UnidadesMedida)
+                                    {
+                                        <MudSelectItem Value="@item.Valor">@item.Texto</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudSelect T="string" @bind-Value="_state.Formulario.IdCondicionesDevolucion" Label="Condición de devolución *" Variant="Variant.Outlined" Required="true" RequiredError="Seleccione una condición de devolución">
+                                    @foreach (var item in _state.CondicionesDevolucion)
+                                    {
+                                        <MudSelectItem Value="@item.Valor">@item.Texto</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudSelect T="string" @bind-Value="_state.Formulario.IdCabys" Label="CABYS *" Variant="Variant.Outlined" Required="true" RequiredError="Seleccione un CABYS">
+                                    @foreach (var item in _state.Cabys)
+                                    {
+                                        <MudSelectItem Value="@item.Valor">@item.Texto</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudSelect T="string" Label="Sucursales / puntos de venta *" MultiSelection="true" Variant="Variant.Outlined" SelectedValues="_state.SucursalesSeleccionadas" SelectedValuesChanged="@((IEnumerable<string> values) => OnSucursalesChanged(values))">
+                                    @foreach (var item in _state.Sucursales)
+                                    {
+                                        <MudSelectItem Value="@item.Valor">@item.Texto</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                <MudCard Class="section-card">
+                    <div class="section-header">
+                        <MudText Typo="Typo.h6" Class="section-title"><MudIcon Icon="@Icons.Material.Outlined.AttachMoney" Size="Size.Small" /> Información comercial</MudText>
+                    </div>
+                    <MudCardContent Class="pa-4">
+                        <MudGrid>
+                            <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.CostoSinIva" Label="Costo sin IVA" Variant="Variant.Outlined" Min="0" /></MudItem>
+                            <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.CostoConIva" Label="Costo con IVA" Variant="Variant.Outlined" Min="0" /></MudItem>
+                            <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.PorcIva" Label="IVA %" Variant="Variant.Outlined" Min="0" Max="100" /></MudItem>
+                            <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.MargenSugerido" Label="Margen suggerido %" Variant="Variant.Outlined" Min="0" Max="100" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.DescuentoIntroduccion" Label="Descuento introducción %" Variant="Variant.Outlined" Min="0" Max="100" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.DescuentoEspecial" Label="Descuento especial %" Variant="Variant.Outlined" Min="0" Max="100" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.DescuentoPermanente" Label="Descuento permanente %" Variant="Variant.Outlined" Min="0" Max="100" /></MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                <MudCard Class="section-card">
+                    <div class="section-header">
+                        <MudText Typo="Typo.h6" Class="section-title"><MudIcon Icon="@Icons.Material.Outlined.LocalShipping" Size="Size.Small" /> Dimensiones y logística</MudText>
+                    </div>
+                    <MudCardContent Class="pa-4">
+                        <MudGrid>
+                            <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.Alto" Label="Alto" Variant="Variant.Outlined" Min="0" /></MudItem>
+                            <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.Ancho" Label="Ancho" Variant="Variant.Outlined" Min="0" /></MudItem>
+                            <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.Profundidad" Label="Profundidad" Variant="Variant.Outlined" Min="0" /></MudItem>
+                            <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.Gramaje" Label="Gramaje" Variant="Variant.Outlined" Min="0" /></MudItem>
+                            <MudItem xs="12" md="4"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.MinDespacho" Label="Mínimo de despacho" Variant="Variant.Outlined" Min="0" /></MudItem>
+                            <MudItem xs="12" md="8"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.Embalaje" Label="Embalaje" Variant="Variant.Outlined" Min="0" /></MudItem>
+                            <MudItem xs="12"><MudNumericField T="int?" @bind-Value="_state.Formulario.CondicionPago" Label="Condición de pago" Variant="Variant.Outlined" Min="0" /></MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                <MudCard Class="section-card">
+                    <div class="section-header">
+                        <MudText Typo="Typo.h6" Class="section-title"><MudIcon Icon="@Icons.Material.Outlined.FactCheck" Size="Size.Small" /> Opciones del producto</MudText>
+                    </div>
+                    <MudCardContent Class="pa-4">
+                        <MudGrid>
+                            <MudSwitch T="bool?" @bind-Value="_state.Formulario.DevuelveMuestras" Color="Color.Success" Label="Devuelve muestras" />
+                            <MudSwitch T="bool?" @bind-Value="_state.Formulario.DeseaPublicidad" Color="Color.Success" Label="Desea publicidad" />
+                            <MudSwitch T="bool?" @bind-Value="_state.Formulario.AceptaDevolucion" Color="Color.Success" Label="Acepta devolución" />
+                            <MudSwitch T="bool?" @bind-Value="_state.Formulario.TienePoliticaCambios" Color="Color.Success" Label="Tiene política de cambios" />
+                        </MudGrid>
+                        <MudDivider Class="my-4" />
+                        <MudSwitch T="bool" @bind-Value="_state.EsFarmacia" Color="Color.Success" Label="Producto de farmacia" />
+                        @if (_state.EsFarmacia)
+                        {
+                            <MudGrid Class="mt-2">
+                                <MudItem xs="12" md="6"><MudTextField @bind-Value="_state.Formulario.FormaFarmaceutica" Label="Forma farmacéutica" Variant="Variant.Outlined" /></MudItem>
+                                <MudItem xs="12" md="6"><MudTextField @bind-Value="_state.Formulario.RegistroMedicamento" Label="Registro de medicamento" Variant="Variant.Outlined" /></MudItem>
+                            </MudGrid>
+                        }
+                    </MudCardContent>
+                </MudCard>
+
+                <MudCard Class="section-card">
+                    <div class="section-header">
+                        <MudText Typo="Typo.h6" Class="section-title"><MudIcon Icon="@Icons.Material.Outlined.Image" Size="Size.Small" /> Imágenes</MudText>
+                    </div>
+                    <MudCardContent Class="pa-4">
+                        <InputFile OnChange="OnFilesSelected" multiple />
+                        <MudText Typo="Typo.caption" Class="mt-2">Máximo 2 archivos.</MudText>
+                        @if (_state.ImagenesNombre.Count > 0)
+                        {
+                            <MudList T="string" Dense="true" Class="mt-2">
+                                @foreach (var img in _state.ImagenesNombre)
+                                {
+                                    <MudListItem T="string">@img</MudListItem>
+                                }
+                            </MudList>
+                        }
+                    </MudCardContent>
+                </MudCard>
+
+                <div class="d-flex justify-end gap-3 sticky-actions mb-6">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="GoBack">Cancelar</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="ShowSummary" Disabled="@_state.Guardando">Revisar resumen</MudButton>
+                </div>
+            </MudForm>
+        }
+
+    
+    </div>
+</RequireAuth>
+
+@code {
+    [Parameter] public string? Sku { get; set; }
+
+    private readonly ProductoFormularioState _state = new();
+    private MudForm? _form;
+    private List<IBrowserFile> _imagenesRaw = new();
+    private HashSet<string> _sucursalesSeleccionadasSet = new();
+
+    private bool IsEditMode => !string.IsNullOrWhiteSpace(Sku);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInitialAsync();
+    }
+
+    private async Task LoadInitialAsync()
+    {
+        try
+        {
+            _state.Cargando = true;
+            _state.Error = null;
+
+            // Si hay datos guardados en sesión (el usuario volvió a editar),
+            // reutilizamos los catálogos ya cargados y restauramos el formulario.
+            if (SessionService.Formulario is not null)
+            {
+                _state.Formulario = SessionService.Formulario;
+                _state.UnidadesMedida = SessionService.UnidadesMedida;
+                _state.CondicionesDevolucion = SessionService.CondicionesDevolucion;
+                _state.Sucursales = SessionService.Sucursales;
+                _state.Cabys = SessionService.Cabys;
+                _state.SucursalesSeleccionadas = SessionService.SucursalesSeleccionadas;
+                _state.EsFarmacia = SessionService.EsFarmacia;
+                _imagenesRaw = new(); // Los bytes ya están en SessionService.Imagenes
+                _state.ImagenesNombre = SessionService.Imagenes.Select(x => x.Name).ToList();
+                _sucursalesSeleccionadasSet = _state.SucursalesSeleccionadas.ToHashSet();
+                return;
+            }
+
+            var unidadesTask = ProductoService.GetUnidadesMedidaAsync();
+            var condicionesTask = ProductoService.GetCondicionesDevolucionAsync();
+            var sucursalesTask = ProductoService.GetSucursalesAsync();
+            var cabysTask = ProductoService.GetCabysAsync();
+
+            await Task.WhenAll(unidadesTask, condicionesTask, sucursalesTask, cabysTask);
+
+            _state.UnidadesMedida = await unidadesTask;
+            _state.CondicionesDevolucion = await condicionesTask;
+            _state.Sucursales = await sucursalesTask;
+            _state.Cabys = await cabysTask;
+
+            _state.Formulario.IdUnidadMedida = _state.UnidadesMedida.FirstOrDefault(x => x.Valor == _state.Formulario.IdUnidadMedida)?.Valor ?? _state.Formulario.IdUnidadMedida;
+            _state.Formulario.IdCondicionesDevolucion = _state.CondicionesDevolucion.FirstOrDefault(x => x.Valor == _state.Formulario.IdCondicionesDevolucion)?.Valor ?? _state.Formulario.IdCondicionesDevolucion;
+            _state.Formulario.IdCabys = _state.Cabys.FirstOrDefault(x => x.Valor == _state.Formulario.IdCabys)?.Valor ?? _state.Formulario.IdCabys;
+            _state.SucursalesSeleccionadas = _state.SucursalesSeleccionadas.Where(x => _state.Sucursales.Any(s => s.Valor == x)).ToList();
+            _sucursalesSeleccionadasSet = _state.SucursalesSeleccionadas.ToHashSet();
+
+            if (IsEditMode)
+            {
+                _state.Error = "La edición no está disponible en este flujo. Solo se permite crear y luego confirmar.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _state.Error = ex.Message;
+        }
+        finally
+        {
+            _state.Cargando = false;
+        }
+    }
+
+    private void GoBack() => NavigationManager.NavigateTo("/home");
+
+    private async Task OnFilesSelected(InputFileChangeEventArgs e)
+    {
+        _imagenesRaw = e.GetMultipleFiles(2).ToList();
+        _state.ImagenesNombre = _imagenesRaw.Select(x => x.Name).ToList();
+        await Task.CompletedTask;
+    }
+
+    private void OnSucursalesChanged(IEnumerable<string> values)
+    {
+        _state.SucursalesSeleccionadas = values.ToList();
+    }
+
+
+
+    private void CloseSummary() => _state.ConfirmacionVisible = false;
+
+
+
+    private static string GetTexto(List<ProductoCatalogoItemDto> catalogo, string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return "-";
+        return catalogo.FirstOrDefault(x => x.Valor == id)?.Texto ?? id;
+    }
+
+    private async Task ShowSummary()
+    {
+        if (_state.SucursalesSeleccionadas.Count == 0)
+        {
+            Snackbar.Add("Seleccione al menos una sucursal.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_state.Formulario.IdSku)
+            || string.IsNullOrWhiteSpace(_state.Formulario.IdUnidadMedida)
+            || string.IsNullOrWhiteSpace(_state.Formulario.IdCondicionesDevolucion)
+            || string.IsNullOrWhiteSpace(_state.Formulario.IdCabys))
+        {
+            Snackbar.Add("Complete los campos obligatorios.", Severity.Warning);
+            return;
+        }
+
+        // Si el usuario seleccionó nuevas imágenes, las leemos; si no, conservamos las anteriores.
+        List<ImagenCapturada> imagenesCapturadas;
+        if (_imagenesRaw.Count > 0)
+        {
+            imagenesCapturadas = new List<ImagenCapturada>();
+            foreach (var file in _imagenesRaw.Take(2))
+            {
+                using var ms = new MemoryStream();
+                await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(ms);
+                imagenesCapturadas.Add(new ImagenCapturada
+                {
+                    Name = file.Name,
+                    ContentType = file.ContentType,
+                    Data = ms.ToArray()
+                });
+            }
+        }
+        else
+        {
+            // Reutilizar las imágenes que ya estaban en sesión (vuelve a editar sin cambiar imágenes)
+            imagenesCapturadas = SessionService.Imagenes;
+        }
+
+        SessionService.Guardar(
+            _state.Formulario,
+            imagenesCapturadas,
+            _state.SucursalesSeleccionadas,
+            _state.UnidadesMedida,
+            _state.CondicionesDevolucion,
+            _state.Sucursales,
+            _state.Cabys,
+            _state.EsFarmacia
+        );
+
+        NavigationManager.NavigateTo("/articulos/confirmar");
+    }
+
+}
+}}}

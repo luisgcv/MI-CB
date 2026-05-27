@@ -1,0 +1,221 @@
+﻿@page "/articulos/confirmar"
+@layout MauiStore.Shared.Layout.MainLayoutPages
+
+@using MauiStore.Shared.Models.Productos
+@using MauiStore.Shared.Services.Articulos
+@inject ProductoFormularioSessionService SessionService
+@inject ProductoService ProductoService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<RequireAuth ReturnUrl="/articulos/confirmar">
+    <div class="product-page" style="padding:16px;">
+
+        <MudPaper Class="pa-4 mb-4" Style="border-radius:16px;" Elevation="2">
+            <div class="d-flex justify-space-between align-center">
+                <MudText Typo="Typo.h5" Style="color:#2e7d32; font-weight:700;">
+                    Resumen del artículo
+                </MudText>
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="Volver">
+                    Volver a editar
+                </MudButton>
+            </div>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Revise todos los datos antes de confirmar. Una vez enviado no podrá modificarse.
+            </MudText>
+        </MudPaper>
+
+        @if (SessionService.Formulario is null)
+        {
+            <MudAlert Severity="Severity.Warning">No hay datos para confirmar.</MudAlert>
+        }
+        else
+        {
+            var f = SessionService.Formulario;
+
+            <MudCard Class="mb-4" Style="border-radius:16px;">
+                <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Información general</MudText></CardHeaderContent></MudCardHeader>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="12" md="4"><b>SKU:</b> @f.IdSku</MudItem>
+                        <MudItem xs="12" md="8"><b>Descripción:</b> @f.Descripcion</MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+
+            <MudCard Class="mb-4" Style="border-radius:16px;">
+                <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Clasificación</MudText></CardHeaderContent></MudCardHeader>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="12" md="4"><b>Unidad de medida:</b> @GetTexto(SessionService.UnidadesMedida, f.IdUnidadMedida)</MudItem>
+                        <MudItem xs="12" md="4"><b>Condición devolución:</b> @GetTexto(SessionService.CondicionesDevolucion, f.IdCondicionesDevolucion)</MudItem>
+                        <MudItem xs="12" md="4"><b>CABYS:</b> @GetTexto(SessionService.Cabys, f.IdCabys)</MudItem>
+                        <MudItem xs="12"><b>Sucursales:</b> @string.Join(", ", SessionService.SucursalesSeleccionadas.Select(id => GetTexto(SessionService.Sucursales, id)))</MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+
+            <MudCard Class="mb-4" Style="border-radius:16px;">
+                <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Información comercial</MudText></CardHeaderContent></MudCardHeader>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="6" md="3"><b>Costo sin IVA:</b> @f.CostoSinIva</MudItem>
+                        <MudItem xs="6" md="3"><b>Costo con IVA:</b> @f.CostoConIva</MudItem>
+                        <MudItem xs="6" md="3"><b>IVA %:</b> @f.PorcIva</MudItem>
+                        <MudItem xs="6" md="3"><b>Margen sugerido %:</b> @f.MargenSugerido</MudItem>
+                        <MudItem xs="6" md="4"><b>Desc. introducción %:</b> @f.DescuentoIntroduccion</MudItem>
+                        <MudItem xs="6" md="4"><b>Desc. especial %:</b> @f.DescuentoEspecial</MudItem>
+                        <MudItem xs="6" md="4"><b>Desc. permanente %:</b> @f.DescuentoPermanente</MudItem>
+                        <MudItem xs="12" md="6"><b>Condición de pago:</b> @f.CondicionPago</MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+
+            <MudCard Class="mb-4" Style="border-radius:16px;">
+                <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Dimensiones y logística</MudText></CardHeaderContent></MudCardHeader>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="6" md="3"><b>Alto:</b> @f.Alto</MudItem>
+                        <MudItem xs="6" md="3"><b>Ancho:</b> @f.Ancho</MudItem>
+                        <MudItem xs="6" md="3"><b>Profundidad:</b> @f.Profundidad</MudItem>
+                        <MudItem xs="6" md="3"><b>Gramaje:</b> @f.Gramaje</MudItem>
+                        <MudItem xs="6" md="4"><b>Mín. despacho:</b> @f.MinDespacho</MudItem>
+                        <MudItem xs="6" md="8"><b>Embalaje:</b> @f.Embalaje</MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+            <MudCard Class="mb-4" Style="border-radius:16px;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Opciones</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudGrid>
+
+                        <MudItem xs="6" md="3">
+                            <MudIcon Icon="@((f.DevuelveMuestras ?? false)
+                                                                         ? Icons.Material.Filled.CheckCircle
+                                                                         : Icons.Material.Filled.Cancel)"
+                                     Color="@((f.DevuelveMuestras ?? false)
+                                                                         ? Color.Success
+                                                                         : Color.Error)"
+                                     Size="Size.Small"
+                                     Class="me-1" />
+                            Devuelve muestras
+                        </MudItem>
+
+                        <MudItem xs="6" md="3">
+                            <MudIcon Icon="@((f.DeseaPublicidad ?? false)
+                                                                         ? Icons.Material.Filled.CheckCircle
+                                                                         : Icons.Material.Filled.Cancel)"
+                                     Color="@((f.DeseaPublicidad ?? false)
+                                                                         ? Color.Success
+                                                                         : Color.Error)"
+                                     Size="Size.Small"
+                                     Class="me-1" />
+                            Desea publicidad
+                        </MudItem>
+
+                        <MudItem xs="6" md="3">
+                            <MudIcon Icon="@((f.AceptaDevolucion ?? false)
+                                                                         ? Icons.Material.Filled.CheckCircle
+                                                                         : Icons.Material.Filled.Cancel)"
+                                     Color="@((f.AceptaDevolucion ?? false)
+                                                                         ? Color.Success
+                                                                         : Color.Error)"
+                                     Size="Size.Small"
+                                     Class="me-1" />
+                            Acepta devolución
+                        </MudItem>
+
+                        <MudItem xs="6" md="3">
+                            <MudIcon Icon="@((f.TienePoliticaCambios ?? false)
+                                                                         ? Icons.Material.Filled.CheckCircle
+                                                                         : Icons.Material.Filled.Cancel)"
+                                     Color="@((f.TienePoliticaCambios ?? false)
+                                                                         ? Color.Success
+                                                                         : Color.Error)"
+                                     Size="Size.Small"
+                                     Class="me-1" />
+                            Política de cambios
+                        </MudItem>
+
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+
+            <MudCard Class="mb-4" Style="border-radius:16px;">
+                <MudCardHeader><CardHeaderContent><MudText Typo="Typo.h6">Imágenes</MudText></CardHeaderContent></MudCardHeader>
+                <MudCardContent>
+                    @if (SessionService.Imagenes.Count == 0)
+                    {
+                        <MudText Color="Color.Secondary">Sin imágenes adjuntas.</MudText>
+                    }
+                    else
+                    {
+                        <MudList T="string" Dense="true">
+                            @foreach (var img in SessionService.Imagenes)
+                            {
+                                <MudListItem T="string" Icon="@Icons.Material.Filled.Image">@img.Name</MudListItem>
+                            }
+                        </MudList>
+                    }
+                </MudCardContent>
+            </MudCard>
+
+            <div class="d-flex justify-end gap-3 mb-6">
+                <MudButton Variant="Variant.Outlined" OnClick="Volver">Volver a editar</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="ConfirmAndSave" Disabled="@_guardando">
+                    @if (_guardando)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+                    }
+                    Confirmar y enviar
+                </MudButton>
+            </div>
+        }
+    </div>
+</RequireAuth>
+
+@code {
+    private bool _guardando;
+
+    private void Volver() => NavigationManager.NavigateTo("/articulos");
+
+    private async Task ConfirmAndSave()
+    {
+        if (SessionService.Formulario is null) return;
+
+        try
+        {
+            _guardando = true;
+
+            var request = SessionService.Formulario;
+            request.IdSucursales = SessionService.SucursalesSeleccionadas;
+            request.FormaFarmaceutica = SessionService.EsFarmacia ? request.FormaFarmaceutica : null;
+            request.RegistroMedicamento = SessionService.EsFarmacia ? request.RegistroMedicamento : null;
+
+            await ProductoService.CreateProductoAsync(request, SessionService.Imagenes);
+
+            SessionService.Limpiar();
+            Snackbar.Add("Producto creado correctamente.", Severity.Success);
+            NavigationManager.NavigateTo("/home");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _guardando = false;
+        }
+    }
+
+    private static string GetTexto(List<ProductoCatalogoItemDto> catalogo, string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return "-";
+        return catalogo.FirstOrDefault(x => x.Valor == id)?.Texto ?? id;
+    }
+}

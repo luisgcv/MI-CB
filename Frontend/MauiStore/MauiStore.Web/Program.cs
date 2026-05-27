@@ -1,20 +1,20 @@
 // MauiStore.Web/Program.cs
-using MauiStore.Web.Components;
-using MauiStore.Shared.Services;
-using MauiStore.Web.Services;
-using MudBlazor.Services;
 using Blazored.LocalStorage;
 using MauiStore.Infrastructure;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-
-using Microsoft.AspNetCore.Components.Authorization;         // AuthorizationCore / AuthStateProvider
-using Microsoft.AspNetCore.Authentication.Cookies;          // CookieAuthenticationDefaults
-using Microsoft.AspNetCore.Http;                            // StatusCodes
-using System;
 using MauiStore.Infrastructure.Interfaces;
 using MauiStore.Shared.Infrastructure.Interfaces;                                               // Uri
+using MauiStore.Shared.Services;
+using MauiStore.Shared.Services.Articulos;
+using MauiStore.Web.Components;
+using MauiStore.Web.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;          // CookieAuthenticationDefaults
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Components.Authorization;         // AuthorizationCore / AuthStateProvider
+using Microsoft.AspNetCore.Http;                            // StatusCodes
+using Microsoft.IdentityModel.Tokens;
+using MudBlazor.Services;
+using System;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +35,9 @@ builder.Services.AddScoped<ClientPreferenceManager>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<MeetingService>();
 builder.Services.AddScoped<PurchaseOrderService>();
+
+builder.Services.AddScoped<ProductoService>();
+
 // Servicios espec�ficos compartidos
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
 builder.Services.AddScoped<IFileService, WebFileService>();
@@ -109,6 +112,8 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().Cre
 
 // Servicio de login/logout
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddScoped<ProductoFormularioSessionService>();
 
 
 

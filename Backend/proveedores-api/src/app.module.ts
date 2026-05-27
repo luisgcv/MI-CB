@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { MeetingsModule } from './modules/meetings/meetings.module';
 import { ContractsModule } from './modules/contracts/contracts.module';
 import { PurchaseOrdersModule } from './modules/purchase-orders/purchase-orders.module';
+import { ProductsModule } from './modules/products/products.module';
 
 
 import { ProfileModule } from './modules/profile/profile.module';
@@ -42,6 +43,7 @@ import { ProfileModule } from './modules/profile/profile.module';
         MeetingsModule,
         ContractsModule,
         PurchaseOrdersModule,
+          ProductsModule,
   ],
 
   controllers: [AppController],

@@ -1,18 +1,17 @@
 ﻿// MauiStore/MauiProgram.cs
-using System;
-using System.Net.Http;
+using Blazored.LocalStorage;
+using MauiStore.Infrastructure;                          // FormFactor
+using MauiStore.Infrastructure.Interfaces;
+using MauiStore.Services;
+using MauiStore.Shared.Infrastructure.Interfaces;                            // JwtAuthStateProvider, AuthHeaderHandler, IAuthService, AuthService
+using MauiStore.Shared.Services;                         // IFormFactor, ClientPreferenceManager, ITokenStorageService
+using MauiStore.Shared.Services.Articulos;
+using MauiStore.Web.Services;
+using Microsoft.AspNetCore.Components.Authorization;     // AuthStateProvider / AddAuthorizationCore
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
-
-using Microsoft.AspNetCore.Components.Authorization;     // AuthStateProvider / AddAuthorizationCore
-
-using MauiStore.Shared.Services;                         // IFormFactor, ClientPreferenceManager, ITokenStorageService
-using MauiStore.Infrastructure;                          // FormFactor
-using MauiStore.Web.Services;
-using MauiStore.Services;
-using Blazored.LocalStorage;
-using MauiStore.Infrastructure.Interfaces;
-using MauiStore.Shared.Infrastructure.Interfaces;                            // JwtAuthStateProvider, AuthHeaderHandler, IAuthService, AuthService
+using System;
+using System.Net.Http;
 
 namespace MauiStore;
 
@@ -86,7 +85,11 @@ public static class MauiProgram
         // Servicio de login/logout
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<MeetingService>();
-       // builder.Services.AddScoped<IAddressService, AddressService>();
+
+
+        builder.Services.AddScoped<ProductoService>();
+
+        // builder.Services.AddScoped<IAddressService, AddressService>();
 
         return builder.Build();
     }
