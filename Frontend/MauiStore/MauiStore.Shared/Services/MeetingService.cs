@@ -71,15 +71,101 @@ namespace MauiStore.Shared.Services
                 ?? new List<MeetingSummaryDto>();
         }
 
-        public async Task CreateMeetingAsync(MeetingCreateRequest request, CancellationToken cancellationToken = default)
+   
+
+        public async Task<MeetingCreatedResponse> CreateMeetingAsync(
+        MeetingCreateRequest request,
+        CancellationToken cancellationToken = default)
+            {
+                await InitHttpClientHeaders();
+
+                var response = await _http.PostAsJsonAsync(MeetingsPath, request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                    throw new HttpRequestException($"Error creating meeting ({response.StatusCode}): {body}");
+                }
+
+                return await response.Content.ReadFromJsonAsync<MeetingCreatedResponse>(
+                    cancellationToken: cancellationToken)
+                    ?? throw new HttpRequestException("No se recibió respuesta de la reunión creada.");
+            }
+
+        public async Task SendDraftAsync(int meetingId, CancellationToken cancellationToken = default)
         {
             await InitHttpClientHeaders();
 
-            var response = await _http.PostAsJsonAsync(MeetingsPath, request, cancellationToken);
+            var response = await _http.PatchAsync(
+                $"{MeetingsPath}/{meetingId}/enviar",
+                null,
+                cancellationToken);
+
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync(cancellationToken);
-                throw new HttpRequestException($"Error creating meeting ({response.StatusCode}): {body}");
+                throw new HttpRequestException($"Error sending draft ({response.StatusCode}): {body}");
+            }
+        }
+
+        public async Task<MeetingSummaryDto> GetMeetingByIdAsync(int meetingId, CancellationToken cancellationToken = default)
+        {
+            await InitHttpClientHeaders();
+
+            var response = await _http.GetAsync($"{MeetingsPath}/{meetingId}", cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new HttpRequestException($"Error loading meeting ({response.StatusCode}): {body}");
+            }
+
+            return await response.Content.ReadFromJsonAsync<MeetingSummaryDto>(cancellationToken: cancellationToken)
+                ?? throw new HttpRequestException("No se recibió información de la reunión.");
+        }
+
+        public async Task UpdateMeetingAsync(int meetingId, MeetingCreateRequest request, CancellationToken cancellationToken = default)
+        {
+            await InitHttpClientHeaders();
+
+            var response = await _http.PatchAsJsonAsync($"{MeetingsPath}/{meetingId}", request, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new HttpRequestException($"Error updating meeting ({response.StatusCode}): {body}");
+            }
+        }
+
+        public async Task DiscardDraftAsync(int meetingId, CancellationToken cancellationToken = default)
+        {
+            await InitHttpClientHeaders();
+
+            var response = await _http.PatchAsync(
+                $"{MeetingsPath}/{meetingId}/descartar",
+                null,
+                cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new HttpRequestException($"Error discarding draft ({response.StatusCode}): {body}");
+            }
+        }
+
+        public async Task CancelMeetingAsync(int meetingId, CancellationToken cancellationToken = default)
+        {
+            await InitHttpClientHeaders();
+
+            var response = await _http.PatchAsync(
+                $"{MeetingsPath}/{meetingId}/cancelar",
+                null,
+                cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new HttpRequestException($"Error canceling meeting ({response.StatusCode}): {body}");
             }
         }
     }
@@ -109,6 +195,12 @@ namespace MauiStore.Shared.Services
 
         [JsonPropertyName("tipoReunion")]
         public string TipoReunion { get; set; } = string.Empty;
+
+        [JsonPropertyName("departmentId")]
+        public int DepartmentId { get; set; }
+
+        [JsonPropertyName("departamento")]
+        public string Departamento { get; set; } = string.Empty;
 
         [JsonPropertyName("estadoReunion")]
         public string EstadoReunion { get; set; } = string.Empty;
@@ -149,4 +241,11 @@ namespace MauiStore.Shared.Services
         [JsonPropertyName("isDraft")]
         public bool IsDraft { get; set; }
     }
+
+    public sealed class MeetingCreatedResponse
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+    }
+
 }

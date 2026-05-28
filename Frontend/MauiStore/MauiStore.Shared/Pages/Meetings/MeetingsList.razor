@@ -5,6 +5,7 @@
 @inject MeetingService MeetingService
 @inject NavigationManager _navigationManager
 @inject ISnackbar _snackbar
+@inject IDialogService DialogService
 
 @layout MainLayoutPages
 
@@ -79,8 +80,10 @@
             <HeaderContent>
                 <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Fecha / Hora</MudText></MudTh>
                 <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Tipo</MudText></MudTh>
+                <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Departamento</MudText></MudTh>
                 <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Motivo</MudText></MudTh>
                 <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Estado</MudText></MudTh>
+                <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Acciones</MudText></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Fecha / Hora">
@@ -95,6 +98,9 @@
                         <MudText Typo="Typo.body2">@context.TipoReunion</MudText>
                     </div>
                 </MudTd>
+                <MudTd DataLabel="Departamento">
+                     <MudText Typo="Typo.body2">@context.Departamento</MudText>
+                </MudTd>
                 <MudTd DataLabel="Motivo">
                     <MudText Typo="Typo.body2" Style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                         @context.Motivo
@@ -105,6 +111,32 @@
                         @context.EstadoReunion
                     </MudChip>
                 </MudTd>
+                    <MudTd DataLabel="Acciones">
+                        <div class="d-flex align-center">
+
+                            @if (context.EstadoReunion.Equals("Borrador", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <MudTooltip Text="Editar borrador">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" Class="mr-1" OnClick="@(() => EditMeeting(context.Id))" />
+                                </MudTooltip>
+
+                                <MudTooltip Text="Enviar solicitud">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Send" Color="Color.Success" Size="Size.Small" Class="mr-1" OnClick="@(() => SendDraft(context.Id))" />
+                                </MudTooltip>
+
+                                <MudTooltip Text="Descartar borrador">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => DiscardDraft(context.Id))" />
+                                </MudTooltip>
+                            }
+                            else if (context.EstadoReunion.Equals("Pendiente", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <MudTooltip Text="Cancelar solicitud">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Warning" Size="Size.Small" OnClick="@(() => CancelMeeting(context.Id))" />
+                                </MudTooltip>
+                            }
+
+                        </div>
+                    </MudTd>
             </RowTemplate>
         </MudTable>
     }
@@ -148,6 +180,76 @@
         _navigationManager.NavigateTo("/reuniones/crear");
     }
 
+    private void EditMeeting(int id)
+    {
+        _navigationManager.NavigateTo($"/reuniones/crear?id={id}");
+    }
+
+    private async Task SendDraft(int id)
+    {
+        try
+        {
+            await MeetingService.SendDraftAsync(id);
+            _snackbar.Add("Solicitud enviada correctamente.", Severity.Success);
+            await LoadMeetingsAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Error al enviar la solicitud: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DiscardDraft(int id)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Descartar borrador",
+            "¿Deseas descartar este borrador?",
+            yesText: "Descartar",
+            cancelText: "Volver");
+
+        if (confirmed != true) return;
+
+        try
+        {
+            await MeetingService.DiscardDraftAsync(id);
+            _snackbar.Add("Borrador descartado correctamente.", Severity.Success);
+            await LoadMeetingsAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Error al descartar el borrador: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CancelMeeting(int id)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Cancelar solicitud",
+            "¿Deseas cancelar esta solicitud de reunión?",
+            yesText: "Cancelar solicitud",
+            cancelText: "Volver");
+
+        if (confirmed != true)
+            return;
+
+        try
+        {
+            await MeetingService.CancelMeetingAsync(id);
+
+            _snackbar.Add(
+                "Solicitud cancelada correctamente.",
+                Severity.Success);
+
+            await LoadMeetingsAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add(
+                $"Error al cancelar la solicitud: {ex.Message}",
+                Severity.Error);
+        }
+    }
+
     private Color GetEstadoColor(string estado)
     {
         return estado?.ToLowerInvariant() switch
@@ -156,6 +258,8 @@
             "pendiente" => Color.Warning,
             "rechazada" => Color.Error,
             "borrador" => Color.Default,
+            "cancelada" => Color.Default,
+            "descartada" => Color.Default,
             _ => Color.Info
         };
     }

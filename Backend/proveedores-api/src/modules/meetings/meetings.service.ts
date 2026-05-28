@@ -10,13 +10,7 @@ import { DepartmentEntity } from '../../database/entities/department.entity';
 
 @Injectable()
 export class MeetingsService {
-  private readonly meetingTypeMap: Record<string, number> = {
-    comercial: 1,
-    técnica: 2,
-    tecnica: 2,
-    administrativa: 3,
-    otro: 4,
-  };
+
 
   constructor(
     @InjectRepository(MeetingEntity)
@@ -29,7 +23,7 @@ export class MeetingsService {
     private readonly pduRepository: Repository<ProviderUserDepartmentEntity>,
     @InjectRepository(DepartmentEntity)
     private readonly departmentRepository: Repository<DepartmentEntity>,
-  ) {}
+  ) { }
 
   async getMeetingTypes() {
     const meetingTypes = await this.meetingTypeRepository.find({
@@ -44,14 +38,15 @@ export class MeetingsService {
     }));
   }
 
-    async getDepartments() {
+  async getDepartments() {
     const departments = await this.departmentRepository.find();
 
     return departments.map((dept) => ({
-        id: dept.departmentId,
-        nombre: dept.departmentName,
+      id: dept.departmentId,
+      nombre: dept.departmentName,
     }));
-    }
+  }
+
 
   async createMeeting(identificationId: string, dto: CreateMeetingDto) {
     const pdu = await this.pduRepository.findOne({ where: { identificationId } });
@@ -66,11 +61,26 @@ export class MeetingsService {
       throw new BadRequestException('Fecha u hora inválida.');
     }
 
-    const meetingTypeId = this.getMeetingTypeId(dto.tipoReunion);
-    const meetingStateId = this.getMeetingStateId(dto.isDraft ?? false);
+    const meetingType = await this.meetingTypeRepository.findOne({
+      where: { description: dto.tipoReunion },
+    });
 
-    await this.ensureMeetingTypeExists(meetingTypeId, dto.tipoReunion);
-    await this.ensureMeetingStateExists(meetingStateId, dto.isDraft ?? false);
+    if (!meetingType) {
+      throw new BadRequestException('Tipo de reunión no válido.');
+    }
+
+    const stateDescription = dto.isDraft ? 'Borrador' : 'Pendiente';
+
+    const meetingState = await this.meetingStateRepository.findOne({
+      where: { description: stateDescription },
+    });
+
+    if (!meetingState) {
+      throw new BadRequestException('Estado de reunión no configurado.');
+    }
+
+    const meetingTypeId = meetingType.meetingTypeId;
+    const meetingStateId = meetingState.meetingStateId;
 
     const meeting = this.meetingRepository.create({
       providerId: pdu.providerId,
@@ -93,12 +103,12 @@ export class MeetingsService {
     }
 
     const meetings = await this.meetingRepository.find({
-    where: {
+      where: {
         providerId: pdu.providerId,
-    },
-    order: {
+      },
+      order: {
         startDateTime: 'DESC',
-    },
+      },
     });
 
     if (meetings.length === 0) {
@@ -107,6 +117,7 @@ export class MeetingsService {
 
     const meetingTypeIds = Array.from(new Set(meetings.map((meeting) => meeting.meetingTypeId)));
     const meetingStateIds = Array.from(new Set(meetings.map((meeting) => meeting.meetingStateId)));
+    const departmentIds = Array.from(new Set(meetings.map((meeting) => meeting.departmentId)));
 
     const meetingTypes = await this.meetingTypeRepository.find({
       where: {
@@ -120,13 +131,21 @@ export class MeetingsService {
       },
     });
 
+    const departments = await this.departmentRepository.find({
+      where: {
+        departmentId: In(departmentIds),
+      },
+    });
+
     const typeMap = Object.fromEntries(meetingTypes.map((type) => [type.meetingTypeId, type.description]));
     const stateMap = Object.fromEntries(meetingStates.map((state) => [state.meetingStateId, state.description]));
+    const departmentMap = Object.fromEntries(departments.map((department) => [department.departmentId, department.departmentName]));
 
     return meetings.map((meeting) => ({
       id: meeting.id,
       tipoReunion: typeMap[meeting.meetingTypeId] ?? 'Otro',
       estadoReunion: stateMap[meeting.meetingStateId] ?? 'Desconocido',
+      departamento: departmentMap[meeting.departmentId] ?? '',
       motivo: meeting.reason,
       observaciones: meeting.observations,
       fechaHoraInicio: meeting.startDateTime,
@@ -134,33 +153,244 @@ export class MeetingsService {
     }));
   }
 
-  private async ensureMeetingTypeExists(meetingTypeId: number, tipoReunion: string) {
-    const existing = await this.meetingTypeRepository.findOne({ where: { meetingTypeId } });
-    if (!existing) {
-      const entity = this.meetingTypeRepository.create({
-        meetingTypeId,
-        description: tipoReunion.trim(),
-      });
-      await this.meetingTypeRepository.save(entity);
+  async getMeetingById(identificationId: string, meetingId: number) {
+    const pdu = await this.pduRepository.findOne({
+      where: { identificationId },
+    });
+
+    if (!pdu) {
+      throw new BadRequestException(
+        'El usuario no tiene proveedor asociado.',
+      );
     }
-  }
 
-  private async ensureMeetingStateExists(meetingStateId: number, isDraft: boolean) {
-    const existing = await this.meetingStateRepository.findOne({ where: { meetingStateId } });
-    if (!existing) {
-      const entity = this.meetingStateRepository.create({
-        meetingStateId,
-        description: isDraft ? 'Borrador' : 'Programada',
-      });
-      await this.meetingStateRepository.save(entity);
+    const meeting = await this.meetingRepository.findOne({
+      where: {
+        id: meetingId,
+        providerId: pdu.providerId,
+      },
+    });
+
+    if (!meeting) {
+      throw new BadRequestException(
+        'La reunión no existe o no pertenece al proveedor.',
+      );
     }
+
+    const meetingType = await this.meetingTypeRepository.findOne({
+      where: {
+        meetingTypeId: meeting.meetingTypeId,
+      },
+    });
+
+    const meetingState = await this.meetingStateRepository.findOne({
+      where: {
+        meetingStateId: meeting.meetingStateId,
+      },
+    });
+
+    return {
+      id: meeting.id,
+      departmentId: meeting.departmentId,
+      tipoReunion: meetingType?.description ?? '',
+      estadoReunion: meetingState?.description ?? '',
+      motivo: meeting.reason,
+      observaciones: meeting.observations,
+      fechaHoraInicio: meeting.startDateTime,
+      fechaHoraHasta: meeting.endDateTime,
+    };
   }
 
-  private getMeetingTypeId(tipoReunion: string): number {
-    return this.meetingTypeMap[tipoReunion.trim().toLowerCase()] ?? 1;
+
+
+  async sendDraft(identificationId: string, meetingId: number) {
+    const pdu = await this.pduRepository.findOne({
+      where: { identificationId },
+    });
+
+    if (!pdu) {
+      throw new BadRequestException(
+        'El usuario no tiene proveedor asociado.',
+      );
+    }
+
+    const meeting = await this.meetingRepository.findOne({
+      where: {
+        id: meetingId,
+        providerId: pdu.providerId,
+      },
+    });
+
+    if (!meeting) {
+      throw new BadRequestException(
+        'La reunión no existe o no pertenece al proveedor.',
+      );
+    }
+
+    const pendingState = await this.meetingStateRepository.findOne({
+      where: { description: 'Pendiente' },
+    });
+
+    if (!pendingState) {
+      throw new BadRequestException(
+        'Estado Pendiente no configurado.',
+      );
+    }
+
+    meeting.meetingStateId = pendingState.meetingStateId;
+
+    return this.meetingRepository.save(meeting);
   }
 
-  private getMeetingStateId(isDraft: boolean): number {
-    return isDraft ? 2 : 1;
+  async updateDraft(
+    identificationId: string,
+    meetingId: number,
+    dto: CreateMeetingDto,
+  ) {
+    const pdu = await this.pduRepository.findOne({
+      where: { identificationId },
+    });
+
+    if (!pdu) {
+      throw new BadRequestException(
+        'El usuario no tiene proveedor asociado.',
+      );
+    }
+
+    const meeting = await this.meetingRepository.findOne({
+      where: {
+        id: meetingId,
+        providerId: pdu.providerId,
+      },
+    });
+
+    if (!meeting) {
+      throw new BadRequestException(
+        'La reunión no existe o no pertenece al proveedor.',
+      );
+    }
+
+    const currentState = await this.meetingStateRepository.findOne({
+      where: {
+        meetingStateId: meeting.meetingStateId,
+      },
+    });
+
+    if (!currentState) {
+      throw new BadRequestException(
+        'Estado de reunión inválido.',
+      );
+    }
+
+    if (
+      currentState.description.toLowerCase() !== 'borrador'
+    ) {
+      throw new BadRequestException(
+        'Solo se pueden editar reuniones en borrador.',
+      );
+    }
+
+    const meetingType = await this.meetingTypeRepository.findOne({
+      where: {
+        description: dto.tipoReunion,
+      },
+    });
+
+    if (!meetingType) {
+      throw new BadRequestException(
+        'Tipo de reunión no válido.',
+      );
+    }
+
+    meeting.reason = dto.motivo;
+    meeting.observations = dto.observaciones ?? '';
+    meeting.departmentId = dto.departmentId;
+    meeting.meetingTypeId = meetingType.meetingTypeId;
+    meeting.startDateTime = new Date(dto.fechaHoraInicio);
+    meeting.endDateTime = new Date(dto.fechaHoraHasta);
+
+    return this.meetingRepository.save(meeting);
+  }
+
+  async discardDraft(identificationId: string, meetingId: number) {
+    const pdu = await this.pduRepository.findOne({
+      where: { identificationId },
+    });
+
+    if (!pdu) {
+      throw new BadRequestException('El usuario no tiene proveedor asociado.');
+    }
+
+    const meeting = await this.meetingRepository.findOne({
+      where: {
+        id: meetingId,
+        providerId: pdu.providerId,
+      },
+    });
+
+    if (!meeting) {
+      throw new BadRequestException('La reunión no existe o no pertenece al proveedor.');
+    }
+
+    const currentState = await this.meetingStateRepository.findOne({
+      where: { meetingStateId: meeting.meetingStateId },
+    });
+
+    if (currentState?.description?.toLowerCase() !== 'borrador') {
+      throw new BadRequestException('Solo se pueden descartar reuniones en borrador.');
+    }
+
+    const discardedState = await this.meetingStateRepository.findOne({
+      where: { description: 'Descartada' },
+    });
+
+    if (!discardedState) {
+      throw new BadRequestException('Estado Descartada no configurado.');
+    }
+
+    meeting.meetingStateId = discardedState.meetingStateId;
+
+    return this.meetingRepository.save(meeting);
+  }
+
+  async cancelMeeting(identificationId: string, meetingId: number) {
+    const pdu = await this.pduRepository.findOne({
+      where: { identificationId },
+    });
+
+    if (!pdu) {
+      throw new BadRequestException('El usuario no tiene proveedor asociado.');
+    }
+
+    const meeting = await this.meetingRepository.findOne({
+      where: {
+        id: meetingId,
+        providerId: pdu.providerId,
+      },
+    });
+
+    if (!meeting) {
+      throw new BadRequestException('La reunión no existe o no pertenece al proveedor.');
+    }
+
+    const currentState = await this.meetingStateRepository.findOne({
+      where: { meetingStateId: meeting.meetingStateId },
+    });
+
+    if (currentState?.description?.toLowerCase() !== 'pendiente') {
+      throw new BadRequestException('Solo se pueden cancelar reuniones pendientes.');
+    }
+
+    const canceledState = await this.meetingStateRepository.findOne({
+      where: { description: 'Cancelada' },
+    });
+
+    if (!canceledState) {
+      throw new BadRequestException('Estado Cancelada no configurado.');
+    }
+
+    meeting.meetingStateId = canceledState.meetingStateId;
+
+    return this.meetingRepository.save(meeting);
   }
 }

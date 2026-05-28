@@ -3,7 +3,7 @@
 @using MauiStore.Shared.Layout
 @using MauiStore.Shared.Services
 @inject NavigationManager _navigationManager
-@inject MeetingService MeetingService
+@inject MeetingService _meetingService
 @inject ISnackbar _snackbar
 
 @layout MainLayoutPages
@@ -175,6 +175,7 @@
                                Label="Fecha"
                                Placeholder="mm/dd/yyyy"
                                DateFormat="MM/dd/yyyy"
+                               MinDate="@DateTime.Today"
                                Variant="Variant.Outlined"
                                FullWidth="@true"
                                Margin="Margin.Dense"
@@ -237,25 +238,33 @@
 </RequireAuth>
 
 @code {
-
-    // ── Modelo ──────────────────────────────────────────────────────────────
     private MeetingRequestModel _model = new();
     private bool _isSaving;
     private bool _isSending;
+    private int? _draftMeetingId;
     private List<MeetingTypeDto>? _tiposReunion;
     private List<DepartmentDto>? _departamentos;
+
+    [SupplyParameterFromQuery]
+    public int? Id { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         await LoadTiposReunionAsync();
         await LoadDepartamentosAsync();
+
+        if (Id.HasValue)
+        {
+            await LoadMeetingForEditAsync(Id.Value);
+        }
     }
 
     private async Task LoadTiposReunionAsync()
     {
         try
         {
-            _tiposReunion = await MeetingService.GetMeetingTypesAsync();
+            _tiposReunion = await _meetingService.GetMeetingTypesAsync();
+
             if (_tiposReunion.Any() && string.IsNullOrEmpty(_model.TipoReunion))
             {
                 _model.TipoReunion = _tiposReunion.First().Descripcion;
@@ -264,7 +273,6 @@
         catch (Exception ex)
         {
             _snackbar.Add($"Excepción al cargar tipos de reunión: {ex.Message}", Severity.Error);
-            // Fallback en caso de excepción
             CargarTiposPorDefecto();
         }
     }
@@ -273,7 +281,8 @@
     {
         try
         {
-            _departamentos = await MeetingService.GetDepartmentsAsync();
+            _departamentos = await _meetingService.GetDepartmentsAsync();
+
             if (_departamentos != null && _departamentos.Any() && _model.DepartmentId == 0)
             {
                 _model.DepartmentId = _departamentos.First().Id;
@@ -286,6 +295,27 @@
         }
     }
 
+    private async Task LoadMeetingForEditAsync(int id)
+    {
+        try
+        {
+            var meeting = await _meetingService.GetMeetingByIdAsync(id);
+
+            _draftMeetingId = meeting.Id;
+            _model.Motivo = meeting.Motivo;
+            _model.TipoReunion = meeting.TipoReunion;
+            _model.DepartmentId = meeting.DepartmentId;
+            _model.Observaciones = meeting.Observaciones;
+            _model.Fecha = meeting.FechaHoraInicio.Date;
+            _model.Hora = meeting.FechaHoraInicio.TimeOfDay;
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Error al cargar la reunión: {ex.Message}", Severity.Error);
+            _navigationManager.NavigateTo("/reuniones");
+        }
+    }
+
     private void CargarTiposPorDefecto()
     {
         _tiposReunion = new List<MeetingTypeDto>
@@ -295,22 +325,40 @@
             new() { Descripcion = "Administrativa" },
             new() { Descripcion = "Otro" }
         };
+
         if (string.IsNullOrEmpty(_model.TipoReunion))
         {
             _model.TipoReunion = _tiposReunion.First().Descripcion;
         }
     }
 
-    // ── Acciones ────────────────────────────────────────────────────────────
     private async Task GuardarBorrador()
     {
         if (!ValidarFormulario(showErrors: false)) return;
 
         _isSaving = true;
+
         try
         {
-            await PostMeetingAsync(isDraft: true);
-            _snackbar.Add("Borrador guardado correctamente.", Severity.Info);
+            var requestBody = BuildMeetingRequest(isDraft: true);
+
+            if (Id.HasValue)
+            {
+                await _meetingService.UpdateMeetingAsync(Id.Value, requestBody);
+                _draftMeetingId = Id.Value;
+                _snackbar.Add("Borrador actualizado correctamente.", Severity.Info);
+            }
+            else if (_draftMeetingId.HasValue)
+            {
+                await _meetingService.UpdateMeetingAsync(_draftMeetingId.Value, requestBody);
+                _snackbar.Add("Borrador actualizado correctamente.", Severity.Info);
+            }
+            else
+            {
+                var created = await _meetingService.CreateMeetingAsync(requestBody);
+                _draftMeetingId = created.Id;
+                _snackbar.Add("Borrador guardado correctamente.", Severity.Info);
+            }
         }
         catch (Exception ex)
         {
@@ -327,9 +375,18 @@
         if (!ValidarFormulario(showErrors: true)) return;
 
         _isSending = true;
+
         try
         {
-            await PostMeetingAsync(isDraft: false);
+            if (_draftMeetingId.HasValue)
+            {
+                await _meetingService.SendDraftAsync(_draftMeetingId.Value);
+            }
+            else
+            {
+                await _meetingService.CreateMeetingAsync(BuildMeetingRequest(isDraft: false));
+            }
+
             _snackbar.Add("Solicitud enviada exitosamente.", Severity.Success);
             _navigationManager.NavigateTo("/reuniones");
         }
@@ -343,12 +400,12 @@
         }
     }
 
-    private async Task PostMeetingAsync(bool isDraft)
+    private MeetingCreateRequest BuildMeetingRequest(bool isDraft)
     {
         var startDateTime = _model.Fecha.Value.Date + _model.Hora.Value;
         var endDateTime = startDateTime.AddHours(1);
 
-        var requestBody = new MeetingCreateRequest
+        return new MeetingCreateRequest
         {
             Motivo = _model.Motivo?.Trim() ?? string.Empty,
             TipoReunion = _model.TipoReunion,
@@ -358,8 +415,6 @@
             FechaHoraHasta = endDateTime.ToString("o"),
             IsDraft = isDraft,
         };
-
-        await MeetingService.CreateMeetingAsync(requestBody);
     }
 
     private bool ValidarFormulario(bool showErrors)
@@ -369,25 +424,38 @@
             if (showErrors) _snackbar.Add("Ingrese el motivo de la reunión.", Severity.Warning);
             return false;
         }
+
         if (_model.DepartmentId == 0)
         {
             if (showErrors) _snackbar.Add("Seleccione un departamento.", Severity.Warning);
             return false;
         }
+
         if (_model.Fecha is null)
         {
             if (showErrors) _snackbar.Add("Seleccione una fecha.", Severity.Warning);
             return false;
         }
+
+        if (_model.Fecha.Value.Date < DateTime.Today)
+        {
+            if (showErrors)
+                _snackbar.Add(
+                    "No puedes seleccionar una fecha anterior a hoy.",
+                    Severity.Warning);
+
+            return false;
+        }
+
         if (_model.Hora is null)
         {
             if (showErrors) _snackbar.Add("Seleccione una hora.", Severity.Warning);
             return false;
         }
+
         return true;
     }
 
-    // ── Modelo de datos ─────────────────────────────────────────────────────
     private sealed class MeetingRequestModel
     {
         public string Motivo { get; set; } = string.Empty;
