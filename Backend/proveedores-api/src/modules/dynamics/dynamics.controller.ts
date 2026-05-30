@@ -3,10 +3,11 @@ import {
   Get,
   Param,
   Query,
+  Res,
   Request,
   UseGuards,
 } from '@nestjs/common';
-
+import { Response } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DynamicsService } from './dynamics.service';
 
@@ -40,4 +41,5 @@ export class DynamicsController {
       req.user.providerId,
     );
   }
+  
 }

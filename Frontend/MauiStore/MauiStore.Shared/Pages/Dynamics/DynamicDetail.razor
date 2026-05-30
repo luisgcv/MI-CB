@@ -28,7 +28,7 @@
             <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
         }
         else if (_detail is not null)
-        {
+        {   //Articulos particpantes
             <MudPaper Class="pa-4 mb-4 elevation-1" Style="border-radius: 12px;">
                 <MudText Typo="Typo.h5" Style="color:#2e7d32;">
                     Detalle de dinámica @_detail.Id
@@ -46,7 +46,7 @@
 
                     <MudItem xs="6">
                         <MudText Typo="Typo.caption">Monto total</MudText>
-                        <MudText>₡@_detail.TotalAmount.ToString("N0")</MudText>
+                        <MudText>₡@_detail.Total.ToString("N0")</MudText>
                     </MudItem>
 
                     <MudItem xs="6">
@@ -60,6 +60,44 @@
                     </MudItem>
                 </MudGrid>
             </MudPaper>
+            //Tarjetas
+            <MudGrid Class="mb-4">
+                <MudItem xs="12" sm="3">
+                    <MudPaper Class="pa-4 text-center" Style="border-radius: 12px;">
+                        <MudText Typo="Typo.caption">Artículos</MudText>
+                        <MudText Typo="Typo.h5" Style="color:#2e7d32;">
+                            @_detail.Results.TotalArticles
+                        </MudText>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="3">
+                    <MudPaper Class="pa-4 text-center" Style="border-radius: 12px;">
+                        <MudText Typo="Typo.caption">Cantidad total</MudText>
+                        <MudText Typo="Typo.h5" Style="color:#2e7d32;">
+                            @_detail.Results.TotalQuantity.ToString("N0")
+                        </MudText>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="3">
+                    <MudPaper Class="pa-4 text-center" Style="border-radius: 12px;">
+                        <MudText Typo="Typo.caption">Monto aplicado</MudText>
+                        <MudText Typo="Typo.h5" Style="color:#2e7d32;">
+                            ₡@_detail.Results.TotalApplied.ToString("N0")
+                        </MudText>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="3">
+                    <MudPaper Class="pa-4 text-center" Style="border-radius: 12px;">
+                        <MudText Typo="Typo.caption">Promedio por artículo</MudText>
+                        <MudText Typo="Typo.h5" Style="color:#2e7d32;">
+                            ₡@_detail.Results.AverageAmount.ToString("N0")
+                        </MudText>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
 
             <MudPaper Class="pa-4 elevation-1" Style="border-radius: 12px;">
                 <MudText Typo="Typo.h6" Class="mb-3">

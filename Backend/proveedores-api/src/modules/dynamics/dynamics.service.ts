@@ -7,6 +7,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 
 import { DynamicEntity } from '../../database/entities/dynamic.entity';
+import { Response } from 'express';
+import PDFDocument from 'pdfkit';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class DynamicsService {
@@ -63,6 +66,21 @@ export class DynamicsService {
         'Dinámica no encontrada',
       );
     }
+    //Participacion: consultar resultados
+    const totalQuantity = dynamic.lines.reduce(
+      (sum, line) => sum + Number(line.quantity),
+      0,
+    );
+
+    const totalApplied = dynamic.lines.reduce(
+      (sum, line) => sum + Number(line.amount),
+      0,
+    );
+
+    const averageAmount =
+      dynamic.lines.length > 0
+        ? totalApplied / dynamic.lines.length
+        : 0;
 
     return {
       ...this.mapSummary(dynamic),
@@ -79,6 +97,13 @@ export class DynamicsService {
         amount: Number(c.amount),
         date: c.date,
       })),
+    //paricipacion
+      results: {
+        totalArticles: dynamic.lines.length,
+        totalQuantity,
+        totalApplied,
+        averageAmount,
+      },
     };
   }
 

@@ -18,9 +18,11 @@ namespace MauiStore.Shared.Models.Dynamics
 
         public DateTime EndDate { get; set; }
 
-        public decimal TotalAmount { get; set; }
+        public decimal Total { get; set; }
 
         public bool Active { get; set; }
+
+        public DynamicResultsDto Results { get; set; } = new();
 
         public List<DynamicLineDto> Lines { get; set; } = new();
     }
