@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 
 import { DynamicEntity } from '../../database/entities/dynamic.entity';
 
@@ -15,9 +15,24 @@ export class DynamicsService {
     private dynamicRepository: Repository<DynamicEntity>,
   ) {}
 
-  async getDynamics(providerId: string) {
+  async getDynamics(
+    providerId: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    const where: any = {
+      providerId,
+    };
+
+    if (startDate && endDate) {
+      where.startDate = Between(
+        new Date(startDate),
+        new Date(endDate),
+      );
+    }
+
     const dynamics = await this.dynamicRepository.find({
-      where: { providerId },
+      where,
       relations: ['branch'],
       order: {
         startDate: 'DESC',
@@ -52,7 +67,7 @@ export class DynamicsService {
     return {
       ...this.mapSummary(dynamic),
 
-      articles: dynamic.lines.map((l) => ({
+      lines: dynamic.lines.map((l) => ({
         sku: l.sku,
         description: l.description,
         quantity: Number(l.quantity),

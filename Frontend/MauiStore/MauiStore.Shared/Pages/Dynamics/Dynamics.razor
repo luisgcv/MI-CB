@@ -9,7 +9,7 @@
 
 @layout MainLayoutPages
 
-<RequireAuth ReturnUrl="/dynamics">
+<RequireAuth ReturnUrl="/dinamicas">
     <div class="pa-4">
 
         <MudPaper Class="pa-4 mb-4 elevation-1" Style="border-radius: 12px;">
@@ -20,6 +20,33 @@
             <MudText Typo="Typo.body2" Color="Color.Secondary">
                 Consulta dinámicas activas e históricas
             </MudText>
+        </MudPaper>
+
+        <MudPaper Class="pa-4 mb-4 elevation-1" Style="border-radius: 12px;">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="4">
+                    <MudDatePicker Label="Fecha inicio"
+                                   @bind-Date="_startDate"
+                                   Variant="Variant.Outlined"
+                                   DateFormat="dd/MM/yyyy" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudDatePicker Label="Fecha fin"
+                                   @bind-Date="_endDate"
+                                   Variant="Variant.Outlined"
+                                   DateFormat="dd/MM/yyyy" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4" Class="d-flex align-end">
+                    <MudButton Color="Color.Success"
+                               Variant="Variant.Filled"
+                               OnClick="LoadAsync"
+                               Style="border-radius: 20px;">
+                        Filtrar
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
         </MudPaper>
 
         @if (_isLoading)
@@ -147,7 +174,8 @@
 </RequireAuth>
 
 @code {
-
+    private DateTime? _startDate;
+    private DateTime? _endDate;
     private bool _isLoading;
     private bool _hasError;
 
@@ -167,7 +195,7 @@
 
         try
         {
-            var result = await DynamicsService.GetDynamicsAsync();
+            var result = await DynamicsService.GetDynamicsAsync(_startDate, _endDate);
 
             if (result.Success && result.Data is not null)
             {

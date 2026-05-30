@@ -2,13 +2,14 @@ import {
   Controller,
   Get,
   Param,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-
 import { DynamicsService } from './dynamics.service';
+
 @UseGuards(JwtAuthGuard)
 @Controller('dynamics')
 export class DynamicsController {
@@ -17,9 +18,15 @@ export class DynamicsController {
   ) {}
 
   @Get()
-  getDynamics(@Request() req) {
+  getDynamics(
+    @Request() req,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
     return this.dynamicsService.getDynamics(
       req.user.providerId,
+      startDate,
+      endDate,
     );
   }
 

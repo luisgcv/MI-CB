@@ -34,6 +34,8 @@ namespace MauiStore.Shared.Services
         }
 
         public async Task<ApiBaseResponse<List<DynamicSummaryDto>>> GetDynamicsAsync(
+            DateTime? startDate = null,
+            DateTime? endDate = null,
             CancellationToken ct = default)
         {
             try
@@ -43,7 +45,14 @@ namespace MauiStore.Shared.Services
                 await InitHttpClientHeaders();
                 await InitAuthentication();
 
-                var response = await _http.GetAsync(BasePath, ct);
+                var url = BasePath;
+
+                if (startDate.HasValue && endDate.HasValue)
+                {
+                    url += $"?startDate={startDate.Value:yyyy-MM-dd}&endDate={endDate.Value:yyyy-MM-dd}";
+                }
+
+                var response = await _http.GetAsync(url, ct);
 
                 if (response.IsSuccessStatusCode)
                 {
