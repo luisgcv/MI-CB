@@ -6,6 +6,7 @@
 @inject PurchaseOrderService PurchaseOrderService
 @inject ISnackbar _snackbar
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 @layout MainLayoutPages
 
@@ -87,6 +88,19 @@
                             </MudItem>
                         </MudGrid>
 
+                        <MudButton FullWidth="true"
+                               Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.Download"
+                               Disabled="@(downloadingId == order.Id)"
+                               OnClick="@(() => DownloadPdf(order.Id))"
+                               Style="border-radius: 8px; text-transform: none;">
+                        @if (downloadingId == order.Id)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            }
+                            Descargar PDF
+                        </MudButton>
+
                     </MudPaper>
                 }
             </div>
@@ -149,4 +163,24 @@
         "Recibida"  => Color.Success,
         _           => Color.Default
     };
+
+
+    private string downloadingId = string.Empty;
+
+    private async Task DownloadPdf(string id)
+    {
+        downloadingId = id;
+        try
+        {
+            await PurchaseOrderService.DownloadPdfAsync(id, JS);
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            downloadingId = string.Empty;
+        }
+    }
 }

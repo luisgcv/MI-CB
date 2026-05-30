@@ -1,6 +1,7 @@
 ﻿using System.Net.Http.Json;
 using MauiStore.Shared.Models.PurchaseOrders;
 using MauiStore.Web.Services;
+using Microsoft.JSInterop;
 
 namespace MauiStore.Shared.Services;
 
@@ -39,7 +40,6 @@ public sealed class PurchaseOrderService : BaseApiService
             LastError = null;
 
             await InitHttpClientHeaders();
-            await InitAuthentication();
 
             var response = await _http.GetAsync(BasePath, ct);
 
@@ -72,7 +72,6 @@ public sealed class PurchaseOrderService : BaseApiService
             LastError = null;
 
             await InitHttpClientHeaders();
-            await InitAuthentication();
 
             var response = await _http.GetAsync($"{BasePath}/{id}", ct);
 
@@ -93,5 +92,22 @@ public sealed class PurchaseOrderService : BaseApiService
             LastError = ex.Message;
             return ApiBaseResponse<PurchaseOrderDetailDto>.Failure(ex.Message);
         }
+    }
+
+    public async Task DownloadPdfAsync(string id, IJSRuntime js, CancellationToken ct = default)
+    {
+        await InitHttpClientHeaders();
+
+        var response = await _http.GetAsync($"{BasePath}/{id}/pdf", ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync(ct);
+            throw new HttpRequestException($"Error al descargar PDF ({response.StatusCode}): {body}");
+        }
+
+        var bytes = await response.Content.ReadAsByteArrayAsync(ct);
+        var base64 = Convert.ToBase64String(bytes);
+        await js.InvokeVoidAsync("downloadPdf", base64, $"orden-{id}.pdf");
     }
 }
