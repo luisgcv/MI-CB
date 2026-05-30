@@ -20,6 +20,68 @@
             </MudText>
         </MudPaper>
 
+        <MudPaper Class="pa-4 mb-4 elevation-1" Style="border-radius: 12px;">
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudSelect T="string"
+                               @bind-Value="_filtroEstado"
+                               Label="Estado"
+                               Variant="Variant.Outlined"
+                               FullWidth="@true"
+                               Margin="Margin.Dense"
+                               AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem T="string" Value="@(null as string)">Todos</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Pendiente")">Pendiente</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Aprobada")">Aprobada</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Rechazada")">Rechazada</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("En tránsito")">En tránsito</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Recibida")">Recibida</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudSelect T="string"
+                               @bind-Value="_filtroSucursal"
+                               Label="Sucursal"
+                               Variant="Variant.Outlined"
+                               FullWidth="@true"
+                               Margin="Margin.Dense"
+                               AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem T="string" Value="@(null as string)">Todas</MudSelectItem>
+                        @foreach (var sucursal in _sucursalesDisponibles)
+                        {
+                            <MudSelectItem T="string" Value="@sucursal">@sucursal</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="_filtroDesde"
+                                   Label="Desde"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="@true"
+                                   Margin="Margin.Dense"
+                                   Editable="true"
+                                   AdornmentColor="Color.Default" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="_filtroHasta"
+                                   Label="Hasta"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="@true"
+                                   Margin="Margin.Dense"
+                                   Editable="true"
+                                   AdornmentColor="Color.Default" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudButton FullWidth="@true"
+                               Variant="Variant.Outlined"
+                               OnClick="LimpiarFiltros"
+                               Style="border-radius: 8px; text-transform: none;">
+                        Limpiar filtros
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
         @if (_isLoading)
         {
             <div class="d-flex justify-center mt-6">
@@ -30,7 +92,7 @@
         {
             <MudAlert Severity="Severity.Error" Style="border-radius: 8px;">@_errorMessage</MudAlert>
         }
-        else if (!_orders.Any())
+        else if (!OrdersFiltrados.Any())
         {
             <MudPaper Class="pa-6 mt-4 text-center elevation-1" Style="border-radius: 12px;">
                 <MudIcon Icon="@Icons.Material.TwoTone.ShoppingCart"
@@ -38,14 +100,16 @@
                          Style="color:#bdbdbd; font-size:4rem;" />
                 <MudText Typo="Typo.h6" Class="mt-2">No hay órdenes</MudText>
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    No se encontraron órdenes de compra registradas.
+                    @(_orders.Any() 
+                        ? "No se encontraron órdenes con los filtros seleccionados." 
+                        : "No se encontraron órdenes de compra registradas.")
                 </MudText>
             </MudPaper>
         }
         else
         {
             <div class="d-flex flex-column" style="gap: 12px;">
-                @foreach (var order in _orders)
+                @foreach (var order in OrdersFiltrados)
                 {
                     var borderColor = GetStatusColor(order.Status);
                     <MudPaper Elevation="1"
@@ -88,7 +152,7 @@
                             </MudItem>
                         </MudGrid>
 
-                        <MudButton FullWidth="true"
+                        <MudButton FullWidth="@true"
                                Variant="Variant.Outlined"
                                StartIcon="@Icons.Material.Filled.Download"
                                Disabled="@(downloadingId == order.Id)"
@@ -182,5 +246,45 @@
         {
             downloadingId = string.Empty;
         }
+    }
+
+
+    //FILTROS
+    private string? _filtroEstado = null;
+    private string? _filtroSucursal = null;
+    private DateTime? _filtroDesde;
+    private DateTime? _filtroHasta;
+
+    private IEnumerable<string> _sucursalesDisponibles =>
+        _orders.Select(o => o.Branch).Distinct().OrderBy(s => s);
+
+    private IEnumerable<PurchaseOrderSummaryDto> OrdersFiltrados
+    {
+        get
+        {
+            var result = _orders.AsEnumerable();
+
+            if (!string.IsNullOrEmpty(_filtroEstado))
+                result = result.Where(o => o.Status == _filtroEstado);
+
+            if (!string.IsNullOrEmpty(_filtroSucursal))
+                result = result.Where(o => o.Branch == _filtroSucursal);
+
+            if (_filtroDesde.HasValue)
+                result = result.Where(o => o.CreatedAt >= _filtroDesde.Value);
+
+            if (_filtroHasta.HasValue)
+                result = result.Where(o => o.CreatedAt <= _filtroHasta.Value);
+
+            return result;
+        }
+    }
+
+    private void LimpiarFiltros()
+    {
+        _filtroEstado = null;
+        _filtroSucursal = null;
+        _filtroDesde = null;
+        _filtroHasta = null;
     }
 }
