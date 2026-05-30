@@ -30,7 +30,7 @@ export class AccountStatementsService {
         });
 
         const totalDebt = documents
-            .filter((d) => d.status.description === 'Pendiente')
+            .filter((d) => d.status.description === 'Pendiente' || d.status.description === 'Vencido')
             .reduce((sum, d) => sum + Number(d.amount), 0);
 
         return {
