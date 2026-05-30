@@ -6,6 +6,9 @@ import { JwtService } from '@nestjs/jwt';
 import { UserEntity } from '../../database/entities/user.entity';
 import { SessionLogEntity } from '../../database/entities/session-log.entity';
 
+import { ProviderUserDepartmentEntity } from '../../database/entities/provider-user-department.entity';
+//ProviderUserDepartment = PDU
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -14,6 +17,9 @@ export class AuthService {
 
     @InjectRepository(SessionLogEntity)
     private sessionLogRepository: Repository<SessionLogEntity>,
+
+    @InjectRepository(ProviderUserDepartmentEntity)
+      private pduRepository: Repository<ProviderUserDepartmentEntity>,
 
     private jwtService: JwtService,
   ) {}
@@ -46,8 +52,15 @@ export class AuthService {
       ),
     ]);
 
+    const pdu = await this.pduRepository.findOne({
+        where: {
+            identificationId
+        },
+    });
+
     const payload = {
-      sub: user.identificationId,
+        sub: user.identificationId,
+        providerId: pdu?.providerId ?? null,
     };
 
     return {
