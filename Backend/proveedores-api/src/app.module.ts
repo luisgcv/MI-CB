@@ -10,7 +10,7 @@ import { ContractsModule } from './modules/contracts/contracts.module';
 import { PurchaseOrdersModule } from './modules/purchase-orders/purchase-orders.module';
 import { ProductsModule } from './modules/products/products.module';
 import { DynamicsModule } from './modules/dynamics/dynamics.module';
-
+import { AccountStatementsModule } from './modules/account-statements/account-statements.module';
 import { ProfileModule } from './modules/profile/profile.module';
 
 @Module({
@@ -43,8 +43,9 @@ import { ProfileModule } from './modules/profile/profile.module';
         MeetingsModule,
         ContractsModule,
         PurchaseOrdersModule,
-          ProductsModule,
+        ProductsModule,
         DynamicsModule,
+        AccountStatementsModule,
   ],
 
   controllers: [AppController],
