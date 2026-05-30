@@ -35,8 +35,11 @@ builder.Services.AddScoped<ClientPreferenceManager>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<MeetingService>();
 builder.Services.AddScoped<PurchaseOrderService>();
+builder.Services.AddScoped<AccountStatementService>();
 builder.Services.AddScoped<DynamicsService>();
+
 builder.Services.AddScoped<ProductoService>();
+
 
 // Servicios espec�ficos compartidos
 builder.Services.AddSingleton<IFormFactor, FormFactor>();

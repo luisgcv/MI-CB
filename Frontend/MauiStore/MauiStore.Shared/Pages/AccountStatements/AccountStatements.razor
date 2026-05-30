@@ -1,0 +1,254 @@
+﻿@page "/pagos"
+@using MudBlazor
+@using MauiStore.Shared.Layout
+@using MauiStore.Shared.Services
+@using MauiStore.Shared.Models.AccountStatements
+@inject AccountStatementService AccountStatementService
+@inject ISnackbar _snackbar
+@inject IJSRuntime JS
+
+@layout MainLayoutPages
+
+<RequireAuth ReturnUrl="/estados-de-cuenta">
+    <div class="pa-4">
+
+        <!-- Header -->
+        <MudPaper Class="pa-4 mb-4 elevation-1" Style="border-radius: 12px;">
+            <MudText Typo="Typo.h5" Class="mb-1" Style="color: #2e7d32;">Estado de cuenta</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Consulta tus documentos y movimientos
+            </MudText>
+        </MudPaper>
+
+        <!-- Aviso de delay -->
+        <MudAlert Severity="Severity.Info" Class="mb-4" Style="border-radius: 12px;">
+            La informacion se actualiza a medianoche. Los datos pueden tener un retraso de hasta un dia.
+        </MudAlert>
+
+        <!-- Filtros -->
+        <MudPaper Class="pa-4 mb-4 elevation-1" Style="border-radius: 12px;">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="4">
+                    <MudDatePicker Label="Desde"
+                                   @bind-Date="_from"
+                                   Variant="Variant.Outlined"
+                                   DateFormat="dd/MM/yyyy" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudDatePicker Label="Hasta"
+                                   @bind-Date="_to"
+                                   Variant="Variant.Outlined"
+                                   DateFormat="dd/MM/yyyy" />
+                </MudItem>
+                <MudItem xs="12" sm="4" Class="d-flex align-end">
+                    <MudButton Color="Color.Success"
+                               Variant="Variant.Filled"
+                               OnClick="LoadAsync"
+                               Style="border-radius: 20px;">
+                        Filtrar
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-center mt-6">
+                <MudProgressCircular Size="Size.Large" Indeterminate="true" />
+            </div>
+        }
+        else if (_hasError)
+        {
+            <MudAlert Severity="Severity.Error" Style="border-radius: 8px;">@_errorMessage</MudAlert>
+        }
+        else
+        {
+            <!-- Total de deuda -->
+            <MudPaper Class="pa-4 mb-4 elevation-1" Style="border-radius: 12px; border-left: 4px solid #dc3545;">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Total pendiente de pago</MudText>
+                <MudText Typo="Typo.h5" Class="fw-bold" Style="color: #dc3545;">
+                    @_result.TotalDebt.ToString("N0")
+                </MudText>
+            </MudPaper>
+
+            <!-- Botones de descarga -->
+            <MudGrid Spacing="2" Class="mb-4">
+                <MudItem xs="6">
+                    <MudButton FullWidth="true"
+                               Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                               Disabled="_isDownloadingPdf"
+                               OnClick="DownloadPdf"
+                               Style="border-radius: 8px; text-transform: none;">
+                        @if (_isDownloadingPdf)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        Descargar PDF
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudButton FullWidth="true"
+                               Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.TableChart"
+                               Disabled="_isDownloadingExcel"
+                               OnClick="DownloadExcel"
+                               Style="border-radius: 8px; text-transform: none;">
+                        @if (_isDownloadingExcel)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        Descargar Excel
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+
+            <!-- Lista de documentos -->
+            @if (!_result.Documents.Any())
+            {
+                <MudPaper Class="pa-6 mt-4 text-center elevation-1" Style="border-radius: 12px;">
+                    <MudIcon Icon="@Icons.Material.TwoTone.Receipt"
+                             Size="Size.Large"
+                             Style="color:#bdbdbd; font-size:4rem;" />
+                    <MudText Typo="Typo.h6" Class="mt-2">Sin documentos</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        No se encontraron documentos con los filtros seleccionados.
+                    </MudText>
+                </MudPaper>
+            }
+            else
+            {
+                <div class="d-flex flex-column" style="gap: 12px;">
+                    @foreach (var doc in _result.Documents)
+                    {
+                        var borderColor = GetStatusColor(doc.Status);
+                        <MudPaper Elevation="1"
+                                  Style="@($"border-radius:12px; border-left: 4px solid {borderColor}; padding: 16px;")">
+                            <div class="d-flex justify-space-between align-start mb-2">
+                                <div>
+                                    <MudText Typo="Typo.subtitle1" Class="fw-bold">@doc.Id</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@doc.Type</MudText>
+                                </div>
+                                <MudChip T="string"
+                                         Color="@GetStatusChipColor(doc.Status)"
+                                         Size="Size.Small"
+                                         Variant="Variant.Filled">
+                                    @doc.Status
+                                </MudChip>
+                            </div>
+                            <MudGrid Spacing="1">
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Fecha documento</MudText>
+                                    <MudText Typo="Typo.body2">@doc.DocumentDate.ToString("dd MMM yyyy")</MudText>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Fecha pago</MudText>
+                                    <MudText Typo="Typo.body2">@doc.PaymentDate.ToString("dd MMM yyyy")</MudText>
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Monto</MudText>
+                                    <MudText Typo="Typo.body2" Class="fw-bold">
+                                        @doc.Amount.ToString("N0")
+                                    </MudText>
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    }
+                </div>
+            }
+        }
+
+    </div>
+</RequireAuth>
+
+@code {
+    private DateTime? _from;
+    private DateTime? _to;
+    private bool _isLoading;
+    private bool _hasError;
+    private bool _isDownloadingPdf;
+    private bool _isDownloadingExcel;
+    private string _errorMessage = string.Empty;
+    private AccountStatementResultDto _result = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _hasError = false;
+        try
+        {
+            var result = await AccountStatementService.GetStatementsAsync(_from, _to);
+            if (result.Success && result.Data is not null)
+                _result = result.Data;
+            else
+            {
+                _hasError = true;
+                _errorMessage = result.Message ?? "No se pudieron cargar los documentos.";
+            }
+        }
+        catch (Exception)
+        {
+            _hasError = true;
+            _errorMessage = "No se pudieron cargar los estados de cuenta.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task DownloadPdf()
+    {
+        _isDownloadingPdf = true;
+        try
+        {
+            await AccountStatementService.DownloadPdfAsync(JS, _from, _to);
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isDownloadingPdf = false;
+        }
+    }
+
+    private async Task DownloadExcel()
+    {
+        _isDownloadingExcel = true;
+        try
+        {
+            await AccountStatementService.DownloadExcelAsync(JS, _from, _to);
+        }
+        catch (Exception ex)
+        {
+            _snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isDownloadingExcel = false;
+        }
+    }
+
+    private string GetStatusColor(string status) => status switch
+    {
+        "Pendiente" => "#dc3545",
+        "Aplicado"  => "#46a441",
+        "Vencido"   => "#e65c00",
+        _           => "#9e9e9e"
+    };
+
+    private Color GetStatusChipColor(string status) => status switch
+    {
+        "Pendiente" => Color.Error,
+        "Aplicado"  => Color.Success,
+        "Vencido"   => Color.Warning,
+        _           => Color.Default
+    };
+}
