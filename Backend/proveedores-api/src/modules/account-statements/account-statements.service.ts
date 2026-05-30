@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { Response } from 'express';
 import PDFDocument from 'pdfkit';
+import * as ExcelJS from 'exceljs';
 import { DocumentEntity } from '../../database/entities/account-statement.entity';
 
 @Injectable()
@@ -117,4 +118,82 @@ export class AccountStatementsService {
 
         doc.end();
     }
+
+    async downloadExcelStatement(providerId: string, fromDate: Date | undefined, toDate: Date | undefined, res: Response) {
+        const where: any = { providerId };
+        if (fromDate && toDate)
+            where.documentDate = Between(fromDate, toDate);
+
+        const documents = await this.documentRepository.find({
+            where,
+            relations: ['type', 'status', 'lines'],
+            order: { documentDate: 'DESC' },
+        });
+
+        const totalDebt = documents
+            .filter((d) => d.status.description === 'Pendiente')
+            .reduce((sum, d) => sum + Number(d.amount), 0);
+
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Estado de Cuenta');
+
+        // Aviso de delay
+        sheet.addRow(['Informacion actualizada al cierre del dia anterior.']);
+        sheet.getRow(1).font = { italic: true, color: { argb: 'FF888888' } };
+        sheet.addRow([]);
+
+        // Total deuda
+        sheet.addRow(['Total pendiente de pago:', totalDebt]);
+        sheet.getRow(3).font = { bold: true };
+        sheet.addRow([]);
+
+        // Encabezados de tabla
+        const headerRow = sheet.addRow([
+            'Consecutivo',
+            'Tipo',
+            'Estado',
+            'Fecha documento',
+            'Fecha pago',
+            'Monto',
+        ]);
+        headerRow.font = { bold: true };
+        headerRow.eachCell((cell) => {
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FF46A441' },
+            };
+            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        // Datos
+        for (const d of documents) {
+            sheet.addRow([
+                d.id,
+                d.type?.description ?? '-',
+                d.status?.description ?? '-',
+                new Date(d.documentDate).toLocaleDateString('es-CR'),
+                new Date(d.paymentDate).toLocaleDateString('es-CR'),
+                Number(d.amount),
+            ]);
+        }
+
+        // Ancho de columnas
+        sheet.columns = [
+            { width: 20 },
+            { width: 20 },
+            { width: 15 },
+            { width: 18 },
+            { width: 18 },
+            { width: 15 },
+        ];
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="estado-de-cuenta.xlsx"');
+
+        await workbook.xlsx.write(res);
+        res.end();
+    }
+
 }

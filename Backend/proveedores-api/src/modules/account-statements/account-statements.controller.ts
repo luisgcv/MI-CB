@@ -30,4 +30,16 @@ export class AccountStatementsController {
         const toDate = to ? new Date(to) : undefined;
         return this.service.downloadPdfStatement(req.user.providerId, fromDate, toDate, res);
     }
+
+    @Get('excel')
+    downloadExcel(
+        @Request() req,
+        @Res() res: Response,
+        @Query('from') from?: string,
+        @Query('to') to?: string,
+    ) {
+        const fromDate = from ? new Date(from) : undefined;
+        const toDate = to ? new Date(to) : undefined;
+        return this.service.downloadExcelStatement(req.user.providerId, fromDate, toDate, res);
+    }
 }
