@@ -4,11 +4,9 @@
 @using MauiStore.Shared.Services
 @using MauiStore.Shared.Components
 @using MauiStore.Web.Services
-@using System.Net.Http.Json
 @inject IAuthService Auth
 @inject NavigationManager Nav
-@inject ITokenStorageService TokenStorageService
-@inject HttpClient Http
+@inject ProfileService ProfileService
 
 <style>
     .menu-card {
@@ -132,33 +130,14 @@
     {
         try
         {
-            var token = await TokenStorageService.GetTokenAsync();
-            if (!string.IsNullOrEmpty(token))
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:3000/users-information");
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-                var response = await Http.SendAsync(request);
-                if (response.IsSuccessStatusCode)
-                {
-                    var userInfo = await response.Content.ReadFromJsonAsync<UserInfoResponse>();
-                    if (userInfo != null && !string.IsNullOrEmpty(userInfo.Nombre))
-                    {
-                        UserName = userInfo.Nombre;
-                    }
-                }
-            }
+            var result = await ProfileService.GetProfileAsync();
+            if (result.Success && result.Data is not null && !string.IsNullOrEmpty(result.Data.Name))
+                UserName = result.Data.Name;
         }
         catch (Exception)
         {
-            // Fallback en caso de error
             UserName = "Usuario";
         }
-    }
-
-    private class UserInfoResponse
-    {
-        public string? Nombre { get; set; }
     }
 
     private List<MenuItem> MenuItems = new()
