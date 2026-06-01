@@ -9,6 +9,8 @@
     <AuthorizeView>
         <Authorized>
             <MudNavLink Href="/home" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Cottage"> Principal </MudNavLink>
+            <MudNavLink Href="/articulos/lista" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Inventory2"> Mis artículos </MudNavLink>
+            <MudNavLink Href="/articulos" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.TwoTone.AddBox"> Nuevo artículo </MudNavLink>
             <MudNavLink Href="/Configuracion/MiPerfil" Match="NavLinkMatch.All" Icon="@Icons.Material.TwoTone.Settings"> Mi perfil </MudNavLink>
         </Authorized>
         <NotAuthorized>
@@ -20,8 +22,7 @@
 
     <AuthorizeView>
         <Authorized>
-            <MudNavLink Icon="@Icons.Material.TwoTone.Logout"
-                        OnClick="Logout">
+            <MudNavLink Icon="@Icons.Material.TwoTone.Logout" OnClick="@(_ => Logout())">
                 Cerrar sesión
             </MudNavLink>
         </Authorized>
@@ -40,4 +41,4 @@
         // Hard refresh para reiniciar el circuito y el AuthState
         Nav.NavigateTo("/", true);
     }
-}
+}}

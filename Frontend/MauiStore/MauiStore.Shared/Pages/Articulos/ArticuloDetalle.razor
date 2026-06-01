@@ -1,0 +1,234 @@
+@page "/articulos/{sku}"
+@layout MauiStore.Shared.Layout.MainLayoutPages
+
+@using MauiStore.Shared.Models.Productos
+@using MauiStore.Shared.Services.Articulos
+@inject ProductoService ProductoService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<RequireAuth ReturnUrl="/articulos">
+    <div class="product-page">
+        <MudPaper Class="pa-4 mb-4 section-card" Elevation="0">
+            <div class="d-flex justify-space-between align-center flex-wrap gap-3">
+                <div>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color:#2e7d32;">Detalle del artículo</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Información completa del producto seleccionado.</MudText>
+                </div>
+                <div class="d-flex gap-2">
+                    <MudButton Variant="Variant.Outlined" OnClick="Volver">Volver</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="IrHistorial">Historial</MudButton>
+                </div>
+            </div>
+        </MudPaper>
+
+        @if (_cargando)
+        {
+            <MudPaper Class="pa-8 section-card text-center" Elevation="0">
+                <MudProgressCircular Indeterminate="true" Color="Color.Success" Size="Size.Large" />
+            </MudPaper>
+        }
+        else if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <MudAlert Severity="Severity.Error">@_error</MudAlert>
+        }
+        else if (_detalle is null)
+        {
+            <MudAlert Severity="Severity.Warning">No se encontró el producto.</MudAlert>
+        }
+        else
+        {
+            <MudGrid Spacing="3">
+                <MudItem xs="12" md="4">
+                    <MudCard Class="section-card">
+                        <MudCardContent Class="pa-4">
+                            @if (!string.IsNullOrWhiteSpace(_mainImageUrl))
+                            {
+                                <img src="@_mainImageUrl" alt="Imagen principal" style="width:100%;max-height:320px;object-fit:cover;border-radius:12px;" />
+                            }
+                            else
+                            {
+                                <div class="d-flex align-center justify-center" style="height:240px;background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border-radius:12px;">
+                                    <MudIcon Icon="@Icons.Material.Filled.Inventory2" Size="Size.Large" Color="Color.Success" />
+                                </div>
+                            }
+                            <MudText Typo="Typo.h6" Class="mt-3">@(_detalle.Sku ?? "-")</MudText>
+                            <MudText>@(_detalle.Descripcion ?? "-")</MudText>
+                            <MudChip T="string" Value="@(_detalle.Estado ?? string.Empty)" Color="Color.Success" Variant="Variant.Filled" Class="mt-2">@(_detalle.Estado ?? "-")</MudChip>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="12" md="8">
+                    <MudTabs Rounded="true" PanelClass="pa-4">
+                        <MudTabPanel Text="General">
+                            <MudGrid>
+                                <MudItem xs="12" md="6"><b>Unidad de medida:</b> @(_detalle.UnidadMedida ?? "-")</MudItem>
+                                <MudItem xs="12" md="6"><b>Condición devolución:</b> @(_detalle.CondicionDevolucion ?? "-")</MudItem>
+                                <MudItem xs="12" md="6"><b>Estado:</b> @(_detalle.Estado ?? "-")</MudItem>
+                                <MudItem xs="12" md="6"><b>Proveedor:</b> @(_detalle.proveedor ?? "-")</MudItem>
+                                <MudItem xs="12" md="6"><b>Creado:</b> @_detalle.FechaCreacion?.ToString("dd/MM/yyyy HH:mm")</MudItem>
+                            </MudGrid>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="Comercial">
+                            <MudGrid>
+                                <MudItem xs="12" md="4"><b>Costo sin IVA:</b> @_detalle.CostoSinIva</MudItem>
+                                <MudItem xs="12" md="4"><b>Costo con IVA:</b> @_detalle.CostoConIva</MudItem>
+                                <MudItem xs="12" md="4"><b>IVA %:</b> @_detalle.PorcIva</MudItem>
+                                <MudItem xs="12" md="4"><b>Margen sugerido:</b> @_detalle.MargenSugerido</MudItem>
+                                <MudItem xs="12" md="4"><b>Desc. introducción:</b> @_detalle.DescuentoIntroduccion</MudItem>
+                                <MudItem xs="12" md="4"><b>Desc. especial:</b> @_detalle.DescuentoEspecial</MudItem>
+                                <MudItem xs="12" md="4"><b>Desc. permanente:</b> @_detalle.DescuentoPermanente</MudItem>
+                                <MudItem xs="12" md="4"><b>Condición pago:</b> @_detalle.CondicionPago</MudItem>
+                            </MudGrid>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="Logística">
+                            <MudGrid>
+                                <MudItem xs="12" md="3"><b>Alto:</b> @_detalle.Alto</MudItem>
+                                <MudItem xs="12" md="3"><b>Ancho:</b> @_detalle.Ancho</MudItem>
+                                <MudItem xs="12" md="3"><b>Profundidad:</b> @_detalle.Profundidad</MudItem>
+                                <MudItem xs="12" md="3"><b>Gramaje:</b> @_detalle.Gramaje</MudItem>
+                                <MudItem xs="12" md="4"><b>Mín. despacho:</b> @_detalle.MinDespacho</MudItem>
+                                <MudItem xs="12" md="4"><b>Embalaje:</b> @_detalle.Embalaje</MudItem>
+                            </MudGrid>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="Opciones">
+                            <MudGrid>
+                                <MudItem xs="12" md="3"><b>Devuelve muestras:</b> @FormatBool(_detalle.DevuelveMuestras)</MudItem>
+                                <MudItem xs="12" md="3"><b>Desea publicidad:</b> @FormatBool(_detalle.DeseaPublicidad)</MudItem>
+                                <MudItem xs="12" md="3"><b>Acepta devolución:</b> @FormatBool(_detalle.AceptaDevolucion)</MudItem>
+                                <MudItem xs="12" md="3"><b>Política de cambios:</b> @FormatBool(_detalle.TienePoliticaCambios)</MudItem>
+                            </MudGrid>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="Catálogos">
+                            <MudText Typo="Typo.subtitle2">Sucursales</MudText>
+                            <MudStack Row="true" Spacing="1" Class="mb-3 flex-wrap">
+                                @foreach (var suc in _detalle.Sucursales)
+                                {
+                                    <MudChip T="string" Value="@(suc.Texto ?? string.Empty)" Variant="Variant.Outlined">@(suc.Texto ?? "-")</MudChip>
+                                }
+                            </MudStack>
+
+                            <MudText Typo="Typo.subtitle2">CABYS</MudText>
+                            <MudStack Spacing="2">
+                                @foreach (var cabys in _detalle.Cabys)
+                                {
+                                    <MudPaper Class="pa-3" Outlined="true">
+                                        <MudText><b>@(cabys.Id ?? "-")</b> - @(cabys.Nombre ?? "-")</MudText>
+                                        @if (!string.IsNullOrWhiteSpace(cabys.FormaFarmaceutica))
+                                        {
+                                            <MudText Typo="Typo.body2">Forma farmacéutica: @cabys.FormaFarmaceutica</MudText>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(cabys.RegistroMedicamento))
+                                        {
+                                            <MudText Typo="Typo.body2">Registro: @cabys.RegistroMedicamento</MudText>
+                                        }
+                                    </MudPaper>
+                                }
+                            </MudStack>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="Imágenes">
+                            @if (_detailImages.Count == 0)
+                            {
+                                <MudText Color="Color.Secondary">Sin imágenes adjuntas.</MudText>
+                            }
+                            else
+                            {
+                                <MudGrid>
+                                    @foreach (var img in _detailImages)
+                                    {
+                                        <MudItem xs="12" sm="6" md="4">
+                                            <MudCard>
+                                                <img src="@img" style="width:100%;height:180px;object-fit:cover;" />
+                                            </MudCard>
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+                            }
+                        </MudTabPanel>
+                    </MudTabs>
+                </MudItem>
+            </MudGrid>
+        }
+    </div>
+</RequireAuth>
+
+@code {
+    [Parameter] public string Sku { get; set; } = string.Empty;
+    private bool _cargando = true;
+    private string? _error;
+    private ProductoDetalleDto? _detalle;
+    private string? _mainImageUrl;
+    private readonly List<string> _detailImages = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _detalle = await ProductoService.GetMyProductDetailAsync(Sku);
+            await LoadImagesAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task LoadImagesAsync()
+    {
+        if (_detalle is null)
+        {
+            return;
+        }
+
+        foreach (var imagen in _detalle.Imagenes)
+        {
+            var fileName = GetImageFileName(imagen);
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                continue;
+            }
+
+            var imageUrl = await ProductoService.GetProtectedImageDataUrlAsync(_detalle.Sku ?? Sku, fileName);
+            if (!string.IsNullOrWhiteSpace(imageUrl))
+            {
+                _detailImages.Add(imageUrl);
+            }
+        }
+
+        _mainImageUrl = _detailImages.FirstOrDefault();
+    }
+
+    private void Volver() => NavigationManager.NavigateTo("/articulos/lista");
+    private void IrHistorial() => NavigationManager.NavigateTo($"/articulos/{Uri.EscapeDataString(Sku)}/historial");
+    private static string FormatBool(bool? value) => value == true ? "Sí" : "No";
+
+    private static string? GetImageFileName(ProductoImagenDto? imagen)
+    {
+        if (imagen is null)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(imagen.NombreArchivo))
+        {
+            return imagen.NombreArchivo;
+        }
+
+        if (!string.IsNullOrWhiteSpace(imagen.Archivo))
+        {
+            return Path.GetFileName(imagen.Archivo.Trim());
+        }
+
+        return null;
+    }
+}

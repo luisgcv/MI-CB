@@ -1,6 +1,5 @@
 ﻿using MauiStore.Shared.Models.Productos;
 using Microsoft.AspNetCore.Components.Forms;
-using MauiStore.Shared.Models.Productos;
 
 namespace MauiStore.Shared.Services.Articulos;
 

@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Authorization;         // AuthorizationCore / AuthStateProvider
 using Microsoft.AspNetCore.Http;                            // StatusCodes
 using Microsoft.IdentityModel.Tokens;
+using MudBlazor;
 using MudBlazor.Services;
 using System;
 using System.Text;
@@ -117,6 +118,8 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().Cre
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<ProductoFormularioSessionService>();
+
+builder.Services.AddScoped<IDialogService, DialogService>();
 
 
 

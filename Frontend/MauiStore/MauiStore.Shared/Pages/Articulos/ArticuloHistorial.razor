@@ -1,0 +1,115 @@
+@page "/articulos/{sku}/historial"
+@layout MauiStore.Shared.Layout.MainLayoutPages
+
+@using MauiStore.Shared.Models.Productos
+@using MauiStore.Shared.Services.Articulos
+@inject ProductoService ProductoService
+@inject NavigationManager NavigationManager
+
+<RequireAuth ReturnUrl="/articulos">
+    <div class="product-page">
+        <MudPaper Class="pa-4 mb-4 section-card" Elevation="0">
+            <div class="d-flex justify-space-between align-center flex-wrap gap-3">
+                <div>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color:#2e7d32;">Historial del artículo</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Seguimiento de cambios y estados del producto.</MudText>
+                </div>
+                <MudButton Variant="Variant.Outlined" OnClick="Volver">Volver al detalle</MudButton>
+            </div>
+        </MudPaper>
+
+        @if (_cargando)
+        {
+            <MudPaper Class="pa-8 section-card text-center" Elevation="0">
+                <MudProgressCircular Indeterminate="true" Color="Color.Success" Size="Size.Large" />
+            </MudPaper>
+        }
+        else if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <MudAlert Severity="Severity.Error">@_error</MudAlert>
+        }
+        else if (_historial is null)
+        {
+            <MudAlert Severity="Severity.Warning">No se encontró el historial.</MudAlert>
+        }
+        else
+        {
+            <MudCard Class="section-card mb-4">
+                <MudCardContent Class="pa-4">
+                    <MudText Typo="Typo.h6">@(_historial.Articulo?.Sku ?? "-")</MudText>
+                    <MudText>@(_historial.Articulo?.Descripcion ?? "-")</MudText>
+                    <MudChip T="string" Value="@(_historial.EstadoActual?.Nombre ?? string.Empty)" Color="Color.Success" Variant="Variant.Filled" Class="mt-2">@(_historial.EstadoActual?.Nombre ?? "-")</MudChip>
+                </MudCardContent>
+            </MudCard>
+
+            <MudGrid Spacing="3">
+                <MudItem xs="12" md="4">
+                    <MudCard Class="section-card">
+                        <MudCardContent Class="pa-4">
+                            <MudText Typo="Typo.subtitle1" Class="mb-2">Resumen</MudText>
+                            <MudText><b>Proveedor:</b> @(_historial.Detalle?.IdProveedor ?? "-")</MudText>
+                            <MudText><b>Creado:</b> @_historial.Detalle?.FechaCreacion?.ToString("dd/MM/yyyy HH:mm")</MudText>
+                            <MudText Class="mt-3"><b>Sucursales</b></MudText>
+                            @foreach (var suc in _historial.Detalle?.Sucursales ?? new())
+                            {
+                                <MudChip T="string" Value="@(suc.Texto ?? string.Empty)" Size="Size.Small" Variant="Variant.Outlined" Class="me-1 mb-1">@(suc.Texto ?? "-")</MudChip>
+                            }
+                            <MudText Class="mt-3"><b>CABYS</b></MudText>
+                            @foreach (var cabys in _historial.Detalle?.Cabys ?? new())
+                            {
+                                <MudPaper Class="pa-2 mb-2" Outlined="true">
+                                    <MudText Typo="Typo.body2">@cabys.Id - @cabys.Nombre</MudText>
+                                </MudPaper>
+                            }
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="12" md="8">
+                    <MudTimeline>
+                        @foreach (var evento in _historial.Historial)
+                        {
+                            <MudTimelineItem>
+                                <ItemContent>
+                                    <MudPaper Class="pa-4 section-card" Outlined="true">
+                                        <MudStack Spacing="1">
+                                            <MudText Typo="Typo.subtitle1" Class="font-weight-bold">@(evento.Estado?.Nombre ?? "-")</MudText>
+                                            <MudText Typo="Typo.body2"><b>Motivo:</b> @(evento.Motivo?.Descripcion ?? "-")</MudText>
+                                            <MudText Typo="Typo.body2"><b>Comentario:</b> @(evento.Comentario ?? "-")</MudText>
+                                            <MudText Typo="Typo.caption">@evento.Fecha?.ToString("dd/MM/yyyy HH:mm")</MudText>
+                                        </MudStack>
+                                    </MudPaper>
+                                </ItemContent>
+                            </MudTimelineItem>
+                        }
+                    </MudTimeline>
+                </MudItem>
+            </MudGrid>
+        }
+    </div>
+</RequireAuth>
+
+@code {
+    [Parameter] public string Sku { get; set; } = string.Empty;
+    private bool _cargando = true;
+    private string? _error;
+    private ProductoHistorialResponseDto? _historial;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _historial = await ProductoService.GetMyProductHistoryAsync(Sku);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private void Volver() => NavigationManager.NavigateTo($"/articulos/{Uri.EscapeDataString(Sku)}");
+}

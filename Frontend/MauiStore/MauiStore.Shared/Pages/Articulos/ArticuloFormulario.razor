@@ -1,14 +1,13 @@
 @page "/articulos"
-@page "/articulos/{sku?}"
 @layout MauiStore.Shared.Layout.MainLayoutPages
 
 @using System.Net.Http.Json
 @using MauiStore.Shared.Models.Productos
-
 @using Microsoft.AspNetCore.Components.Forms
 @using MudBlazor
 @using MauiStore.Shared.Services.Articulos
 @inject ProductoService ProductoService
+@inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject ProductoFormularioSessionService SessionService
 @inject ISnackbar Snackbar
@@ -81,54 +80,59 @@
             }
 
             <MudForm @ref="_form">
+
+                <!-- Información general -->
                 <MudCard Class="section-card">
                     <div class="section-header">
-                        <MudText Typo="Typo.h6" Class="section-title"><MudIcon Icon="@Icons.Material.Outlined.Info" Size="Size.Small" /> Información general</MudText>
+                        <MudText Typo="Typo.h6" Class="section-title">
+                            <MudIcon Icon="@Icons.Material.Outlined.Info" Size="Size.Small" /> Información general
+                        </MudText>
                     </div>
                     <MudCardContent Class="pa-4">
                         <MudGrid>
                             <MudItem xs="12" md="4">
-                                <MudTextField @bind-Value="_state.Formulario.IdSku" Label="SKU *" Variant="Variant.Outlined" Required="true" RequiredError="El SKU es obligatorio" Disabled="@IsEditMode" />
+                                <MudTextField @bind-Value="_state.Formulario.IdSku" Label="SKU *" Variant="Variant.Outlined"
+                                              Required="true" RequiredError="El SKU es obligatorio" Disabled="@IsEditMode" />
                             </MudItem>
                             <MudItem xs="12" md="8">
-                                <MudTextField @bind-Value="_state.Formulario.Descripcion" Label="Descripción" Variant="Variant.Outlined" Lines="3" />
+                                <MudTextField @bind-Value="_state.Formulario.Descripcion" Label="Descripción"
+                                              Variant="Variant.Outlined" Lines="3" />
                             </MudItem>
                         </MudGrid>
                     </MudCardContent>
                 </MudCard>
 
+                <!-- Clasificación y catálogos -->
                 <MudCard Class="section-card">
                     <div class="section-header">
-                        <MudText Typo="Typo.h6" Class="section-title"><MudIcon Icon="@Icons.Material.Outlined.Category" Size="Size.Small" /> Clasificación y catálogos</MudText>
+                        <MudText Typo="Typo.h6" Class="section-title">
+                            <MudIcon Icon="@Icons.Material.Outlined.Category" Size="Size.Small" /> Clasificación y catálogos
+                        </MudText>
                     </div>
                     <MudCardContent Class="pa-4">
                         <MudGrid>
-                            <MudItem xs="12" md="4">
-                                <MudSelect T="string" @bind-Value="_state.Formulario.IdUnidadMedida" Label="Unidad de medida *" Variant="Variant.Outlined" Required="true" RequiredError="Seleccione una unidad de medida">
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="string" @bind-Value="_state.Formulario.IdUnidadMedida" Label="Unidad de medida *"
+                                           Variant="Variant.Outlined" Required="true" RequiredError="Seleccione una unidad de medida">
                                     @foreach (var item in _state.UnidadesMedida)
                                     {
                                         <MudSelectItem Value="@item.Valor">@item.Texto</MudSelectItem>
                                     }
                                 </MudSelect>
                             </MudItem>
-                            <MudItem xs="12" md="4">
-                                <MudSelect T="string" @bind-Value="_state.Formulario.IdCondicionesDevolucion" Label="Condición de devolución *" Variant="Variant.Outlined" Required="true" RequiredError="Seleccione una condición de devolución">
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="string" @bind-Value="_state.Formulario.IdCondicionesDevolucion" Label="Condición de devolución *"
+                                           Variant="Variant.Outlined" Required="true" RequiredError="Seleccione una condición de devolución">
                                     @foreach (var item in _state.CondicionesDevolucion)
                                     {
                                         <MudSelectItem Value="@item.Valor">@item.Texto</MudSelectItem>
                                     }
                                 </MudSelect>
                             </MudItem>
-                            <MudItem xs="12" md="4">
-                                <MudSelect T="string" @bind-Value="_state.Formulario.IdCabys" Label="CABYS *" Variant="Variant.Outlined" Required="true" RequiredError="Seleccione un CABYS">
-                                    @foreach (var item in _state.Cabys)
-                                    {
-                                        <MudSelectItem Value="@item.Valor">@item.Texto</MudSelectItem>
-                                    }
-                                </MudSelect>
-                            </MudItem>
                             <MudItem xs="12">
-                                <MudSelect T="string" Label="Sucursales / puntos de venta *" MultiSelection="true" Variant="Variant.Outlined" SelectedValues="_state.SucursalesSeleccionadas" SelectedValuesChanged="@((IEnumerable<string> values) => OnSucursalesChanged(values))">
+                                <MudSelect T="string" Label="Sucursales / puntos de venta *" MultiSelection="true"
+                                           Variant="Variant.Outlined" SelectedValues="_state.SucursalesSeleccionadas"
+                                           SelectedValuesChanged="@((IEnumerable<string> values) => OnSucursalesChanged(values))">
                                     @foreach (var item in _state.Sucursales)
                                     {
                                         <MudSelectItem Value="@item.Valor">@item.Texto</MudSelectItem>
@@ -139,16 +143,19 @@
                     </MudCardContent>
                 </MudCard>
 
+                <!-- Información comercial -->
                 <MudCard Class="section-card">
                     <div class="section-header">
-                        <MudText Typo="Typo.h6" Class="section-title"><MudIcon Icon="@Icons.Material.Outlined.AttachMoney" Size="Size.Small" /> Información comercial</MudText>
+                        <MudText Typo="Typo.h6" Class="section-title">
+                            <MudIcon Icon="@Icons.Material.Outlined.AttachMoney" Size="Size.Small" /> Información comercial
+                        </MudText>
                     </div>
                     <MudCardContent Class="pa-4">
                         <MudGrid>
                             <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.CostoSinIva" Label="Costo sin IVA" Variant="Variant.Outlined" Min="0" /></MudItem>
                             <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.CostoConIva" Label="Costo con IVA" Variant="Variant.Outlined" Min="0" /></MudItem>
                             <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.PorcIva" Label="IVA %" Variant="Variant.Outlined" Min="0" Max="100" /></MudItem>
-                            <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.MargenSugerido" Label="Margen suggerido %" Variant="Variant.Outlined" Min="0" Max="100" /></MudItem>
+                            <MudItem xs="12" md="3"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.MargenSugerido" Label="Margen sugerido %" Variant="Variant.Outlined" Min="0" Max="100" /></MudItem>
                             <MudItem xs="12" md="4"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.DescuentoIntroduccion" Label="Descuento introducción %" Variant="Variant.Outlined" Min="0" Max="100" /></MudItem>
                             <MudItem xs="12" md="4"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.DescuentoEspecial" Label="Descuento especial %" Variant="Variant.Outlined" Min="0" Max="100" /></MudItem>
                             <MudItem xs="12" md="4"><MudNumericField T="decimal?" @bind-Value="_state.Formulario.DescuentoPermanente" Label="Descuento permanente %" Variant="Variant.Outlined" Min="0" Max="100" /></MudItem>
@@ -156,9 +163,12 @@
                     </MudCardContent>
                 </MudCard>
 
+                <!-- Dimensiones y logística -->
                 <MudCard Class="section-card">
                     <div class="section-header">
-                        <MudText Typo="Typo.h6" Class="section-title"><MudIcon Icon="@Icons.Material.Outlined.LocalShipping" Size="Size.Small" /> Dimensiones y logística</MudText>
+                        <MudText Typo="Typo.h6" Class="section-title">
+                            <MudIcon Icon="@Icons.Material.Outlined.LocalShipping" Size="Size.Small" /> Dimensiones y logística
+                        </MudText>
                     </div>
                     <MudCardContent Class="pa-4">
                         <MudGrid>
@@ -173,9 +183,12 @@
                     </MudCardContent>
                 </MudCard>
 
+                <!-- Opciones del producto -->
                 <MudCard Class="section-card">
                     <div class="section-header">
-                        <MudText Typo="Typo.h6" Class="section-title"><MudIcon Icon="@Icons.Material.Outlined.FactCheck" Size="Size.Small" /> Opciones del producto</MudText>
+                        <MudText Typo="Typo.h6" Class="section-title">
+                            <MudIcon Icon="@Icons.Material.Outlined.FactCheck" Size="Size.Small" /> Opciones del producto
+                        </MudText>
                     </div>
                     <MudCardContent Class="pa-4">
                         <MudGrid>
@@ -189,16 +202,35 @@
                         @if (_state.EsFarmacia)
                         {
                             <MudGrid Class="mt-2">
-                                <MudItem xs="12" md="6"><MudTextField @bind-Value="_state.Formulario.FormaFarmaceutica" Label="Forma farmacéutica" Variant="Variant.Outlined" /></MudItem>
-                                <MudItem xs="12" md="6"><MudTextField @bind-Value="_state.Formulario.RegistroMedicamento" Label="Registro de medicamento" Variant="Variant.Outlined" /></MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="_state.Formulario.FormaFarmaceutica"
+                                                  Label="Forma farmacéutica" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="_state.Formulario.RegistroMedicamento"
+                                                  Label="Registro de medicamento" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudSelect T="string" @bind-Value="_state.Formulario.IdCabys" Label="CABYS *"
+                                               Variant="Variant.Outlined" Required="true"
+                                               RequiredError="Para productos medicamentosos el CABYS es obligatorio.">
+                                        @foreach (var item in _state.Cabys)
+                                        {
+                                            <MudSelectItem Value="@item.Valor">@item.Texto</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
                             </MudGrid>
                         }
                     </MudCardContent>
                 </MudCard>
 
+                <!-- Imágenes -->
                 <MudCard Class="section-card">
                     <div class="section-header">
-                        <MudText Typo="Typo.h6" Class="section-title"><MudIcon Icon="@Icons.Material.Outlined.Image" Size="Size.Small" /> Imágenes</MudText>
+                        <MudText Typo="Typo.h6" Class="section-title">
+                            <MudIcon Icon="@Icons.Material.Outlined.Image" Size="Size.Small" /> Imágenes
+                        </MudText>
                     </div>
                     <MudCardContent Class="pa-4">
                         <InputFile OnChange="OnFilesSelected" multiple />
@@ -217,12 +249,13 @@
 
                 <div class="d-flex justify-end gap-3 sticky-actions mb-6">
                     <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="GoBack">Cancelar</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="ShowSummary" Disabled="@_state.Guardando">Revisar resumen</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="ShowSummary" Disabled="@_state.Guardando">
+                        Revisar resumen
+                    </MudButton>
                 </div>
+
             </MudForm>
         }
-
-    
     </div>
 </RequireAuth>
 
@@ -248,8 +281,6 @@
             _state.Cargando = true;
             _state.Error = null;
 
-            // Si hay datos guardados en sesión (el usuario volvió a editar),
-            // reutilizamos los catálogos ya cargados y restauramos el formulario.
             if (SessionService.Formulario is not null)
             {
                 _state.Formulario = SessionService.Formulario;
@@ -259,7 +290,7 @@
                 _state.Cabys = SessionService.Cabys;
                 _state.SucursalesSeleccionadas = SessionService.SucursalesSeleccionadas;
                 _state.EsFarmacia = SessionService.EsFarmacia;
-                _imagenesRaw = new(); // Los bytes ya están en SessionService.Imagenes
+                _imagenesRaw = new();
                 _state.ImagenesNombre = SessionService.Imagenes.Select(x => x.Name).ToList();
                 _sucursalesSeleccionadasSet = _state.SucursalesSeleccionadas.ToHashSet();
                 return;
@@ -298,7 +329,41 @@
         }
     }
 
-    private void GoBack() => NavigationManager.NavigateTo("/home");
+    private async Task GoBack()
+    {
+        if (HasUnsavedChanges())
+        {
+            bool confirmed = await ConfirmLeave();
+            if (!confirmed) return;
+        }
+
+        SessionService.Limpiar();
+        NavigationManager.NavigateTo("/home");
+    }
+
+    private bool HasUnsavedChanges()
+    {
+        return SessionService.Formulario is not null
+            || !string.IsNullOrWhiteSpace(_state.Formulario.IdSku)
+            || !string.IsNullOrWhiteSpace(_state.Formulario.Descripcion)
+            || _state.SucursalesSeleccionadas.Count > 0
+            || _imagenesRaw.Count > 0;
+    }
+
+    private async Task<bool> ConfirmLeave()
+    {
+        var parameters = new DialogParameters
+        {
+            ["ContentText"] = "Hay cambios sin guardar. ¿Seguro que deseas salir? Se perderán los datos ingresados.",
+            ["ButtonText"] = "Sí, salir",
+            ["Color"] = Color.Error
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("¿Salir sin guardar?", parameters, options);
+        var result = await dialog.Result;
+        return result is { Canceled: false };
+    }
 
     private async Task OnFilesSelected(InputFileChangeEventArgs e)
     {
@@ -312,11 +377,16 @@
         _state.SucursalesSeleccionadas = values.ToList();
     }
 
-
-
-    private void CloseSummary() => _state.ConfirmacionVisible = false;
-
-
+    private void OnEsFarmaciaChanged(bool esFarmacia)
+    {
+        _state.EsFarmacia = esFarmacia;
+        if (!esFarmacia)
+        {
+            _state.Formulario.IdCabys = null;
+            _state.Formulario.FormaFarmaceutica = null;
+            _state.Formulario.RegistroMedicamento = null;
+        }
+    }
 
     private static string GetTexto(List<ProductoCatalogoItemDto> catalogo, string? id)
     {
@@ -334,14 +404,18 @@
 
         if (string.IsNullOrWhiteSpace(_state.Formulario.IdSku)
             || string.IsNullOrWhiteSpace(_state.Formulario.IdUnidadMedida)
-            || string.IsNullOrWhiteSpace(_state.Formulario.IdCondicionesDevolucion)
-            || string.IsNullOrWhiteSpace(_state.Formulario.IdCabys))
+            || string.IsNullOrWhiteSpace(_state.Formulario.IdCondicionesDevolucion))
         {
             Snackbar.Add("Complete los campos obligatorios.", Severity.Warning);
             return;
         }
 
-        // Si el usuario seleccionó nuevas imágenes, las leemos; si no, conservamos las anteriores.
+        if (_state.EsFarmacia && string.IsNullOrWhiteSpace(_state.Formulario.IdCabys))
+        {
+            Snackbar.Add("Para productos medicamentosos el CABYS es obligatorio.", Severity.Warning);
+            return;
+        }
+
         List<ImagenCapturada> imagenesCapturadas;
         if (_imagenesRaw.Count > 0)
         {
@@ -360,7 +434,6 @@
         }
         else
         {
-            // Reutilizar las imágenes que ya estaban en sesión (vuelve a editar sin cambiar imágenes)
             imagenesCapturadas = SessionService.Imagenes;
         }
 
@@ -377,6 +450,4 @@
 
         NavigationManager.NavigateTo("/articulos/confirmar");
     }
-
 }
-}}}

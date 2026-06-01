@@ -1,0 +1,192 @@
+@page "/articulos/lista"
+@layout MauiStore.Shared.Layout.MainLayoutPages
+
+@using MauiStore.Shared.Models.Productos
+@using MauiStore.Shared.Services.Articulos
+@inject ProductoService ProductoService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<RequireAuth ReturnUrl="/articulos/lista">
+    <div class="product-page">
+        <MudPaper Class="pa-4 mb-4 section-card" Elevation="0">
+            <div class="d-flex justify-space-between align-center flex-wrap gap-3">
+                <div>
+                    <MudText Typo="Typo.h5" Class="font-weight-bold" Style="color:#2e7d32;">Mis artículos</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Resumen de los productos creados y acceso rápido a detalle e historial.</MudText>
+                </div>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Add" OnClick="NuevoArticulo">Nuevo artículo</MudButton>
+            </div>
+        </MudPaper>
+
+        @if (_cargando)
+        {
+            <MudPaper Class="pa-8 section-card text-center" Elevation="0">
+                <MudProgressCircular Indeterminate="true" Color="Color.Success" Size="Size.Large" />
+            </MudPaper>
+        }
+        else if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <MudAlert Severity="Severity.Error">@_error</MudAlert>
+        }
+        else if (_items.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info">No hay artículos para mostrar.</MudAlert>
+        }
+        else
+        {
+            <MudGrid Spacing="3">
+                @foreach (var item in _items)
+                {
+                    <MudItem xs="12" sm="6" lg="4">
+                        <MudCard Class="section-card article-card" OnClick="@(() => VerDetalle(item.Sku))">
+                            @if (!string.IsNullOrWhiteSpace(GetImageSrc(item.Sku, item.ImagenPrincipal)))
+                            {
+                                <img src="@GetImageSrc(item.Sku, item.ImagenPrincipal)" style="width:100%;height:180px;object-fit:cover;" />
+                            }
+                            else
+                            {
+                                <div class="d-flex align-center justify-center" style="height:180px;background:linear-gradient(135deg,#e8f5e9,#f1f8e9);">
+                                    <MudIcon Icon="@Icons.Material.Filled.Inventory2" Size="Size.Large" Color="Color.Success" />
+                                </div>
+                            }
+                            <MudCardContent Class="pa-4">
+                                <div class="d-flex justify-space-between align-start gap-2">
+                                    <div>
+                                        <MudText Typo="Typo.subtitle1" Class="font-weight-bold">@(item.Sku ?? "-")</MudText>
+                                        <MudText Typo="Typo.body2" Style="min-height:40px;">@(item.Descripcion ?? "-")</MudText>
+                                    </div>
+                                    <MudChip T="string" Value="@(item.EstadoActual?.Nombre ?? string.Empty)" Color="@GetColor(item.EstadoActual?.Nombre)" Variant="Variant.Filled" Size="Size.Small">@(item.EstadoActual?.Nombre ?? "-")</MudChip>
+                                </div>
+
+                                <MudStack Row="true" Spacing="1" Class="mt-3 flex-wrap">
+                                    @foreach (var sucursal in item.Sucursales.Take(3))
+                                    {
+                                        <MudChip T="string" Value="@(sucursal.Texto ?? string.Empty)" Size="Size.Small" Variant="Variant.Outlined">@(sucursal.Texto ?? "-")</MudChip>
+                                    }
+                                    @if (item.Sucursales.Count > 3)
+                                    {
+                                        <MudChip T="string" Value="@($"+{item.Sucursales.Count - 3}")" Size="Size.Small" Variant="Variant.Outlined">+@((item.Sucursales.Count - 3))</MudChip>
+                                    }
+                                </MudStack>
+
+                                <MudText Typo="Typo.caption" Class="mt-3 d-block">Creado: @item.FechaCreacion?.ToString("dd/MM/yyyy")</MudText>
+
+                                <MudStack Row="true" Spacing="1" Class="mt-2">
+                                    @foreach (var cabys in item.Cabys.Take(2))
+                                    {
+                                        <MudChip T="string" Value="@(cabys.Texto ?? string.Empty)" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@(cabys.Texto ?? "-")</MudChip>
+                                    }
+                                </MudStack>
+                            </MudCardContent>
+                            <MudCardActions Class="px-4 pb-4 pt-0 d-flex justify-end gap-2">
+                                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@((MouseEventArgs e) => VerHistorial(item.Sku))">Historial</MudButton>
+                                <MudButton Size="Size.Small" Color="Color.Success" Variant="Variant.Filled" OnClick="@((MouseEventArgs e) => VerDetalle(item.Sku))">Ver detalle</MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </div>
+</RequireAuth>
+
+@code {
+    private bool _cargando = true;
+    private string? _error;
+    private List<ProductoListaItemDto> _items = new();
+    private readonly Dictionary<string, string> _imageUrls = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _items = await ProductoService.GetMyProductsAsync();
+            await LoadImagesAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task LoadImagesAsync()
+    {
+        foreach (var item in _items)
+        {
+            var fileName = GetImageFileName(item.ImagenPrincipal);
+            if (string.IsNullOrWhiteSpace(item.Sku) || string.IsNullOrWhiteSpace(fileName))
+            {
+                continue;
+            }
+
+            var imageUrl = await ProductoService.GetProtectedImageDataUrlAsync(item.Sku, fileName);
+            if (!string.IsNullOrWhiteSpace(imageUrl))
+            {
+                _imageUrls[item.Sku] = imageUrl;
+            }
+        }
+    }
+
+    private void NuevoArticulo() => NavigationManager.NavigateTo("/articulos");
+    private void VerDetalle(string? sku)
+    {
+        if (!string.IsNullOrWhiteSpace(sku)) NavigationManager.NavigateTo($"/articulos/{Uri.EscapeDataString(sku)}");
+    }
+    private void VerHistorial(string? sku)
+    {
+        if (!string.IsNullOrWhiteSpace(sku)) NavigationManager.NavigateTo($"/articulos/{Uri.EscapeDataString(sku)}/historial");
+    }
+
+    private static Color GetColor(string? estado) =>
+        estado?.ToLowerInvariant() switch
+        {
+            "aprobado" or "activo" or "publicado" => Color.Success,
+            "rechazado" or "inactivo" or "bloqueado" => Color.Error,
+            _ => Color.Warning
+        };
+
+    private string? GetImageSrc(string? sku, ProductoImagenDto? imagen)
+    {
+        if (string.IsNullOrWhiteSpace(sku) || imagen is null)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(imagen.Archivo) && (imagen.Archivo.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || imagen.Archivo.StartsWith("http", StringComparison.OrdinalIgnoreCase)))
+        {
+            return imagen.Archivo;
+        }
+
+        if (_imageUrls.TryGetValue(sku, out var url))
+        {
+            return url;
+        }
+
+        return null;
+    }
+
+    private static string? GetImageFileName(ProductoImagenDto? imagen)
+    {
+        if (imagen is null)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(imagen.NombreArchivo))
+        {
+            return imagen.NombreArchivo;
+        }
+
+        if (!string.IsNullOrWhiteSpace(imagen.Archivo))
+        {
+            return Path.GetFileName(imagen.Archivo.Trim());
+        }
+
+        return null;
+    }
+}

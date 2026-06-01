@@ -27,6 +27,41 @@ public sealed class ProductoService : BaseApiService
     public Task<List<ProductoCatalogoItemDto>> GetCabysAsync(CancellationToken ct = default) =>
         GetCatalogAsync($"{BasePath}/cabys", ct);
 
+    public Task<List<ProductoListaItemDto>> GetMyProductsAsync(CancellationToken ct = default) =>
+        GetJsonAsync<List<ProductoListaItemDto>>($"{BasePath}/mis-articulos", ct);
+
+    public Task<ProductoDetalleDto?> GetMyProductDetailAsync(string sku, CancellationToken ct = default) =>
+        GetJsonAsync<ProductoDetalleDto>($"{BasePath}/mis-articulos/{Uri.EscapeDataString(sku)}", ct);
+
+    public Task<ProductoHistorialResponseDto?> GetMyProductHistoryAsync(string sku, CancellationToken ct = default) =>
+        GetJsonAsync<ProductoHistorialResponseDto>($"{BasePath}/mis-articulos/{Uri.EscapeDataString(sku)}/historial", ct);
+
+    public async Task<string?> GetProtectedImageDataUrlAsync(string sku, string fileName, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(sku) || string.IsNullOrWhiteSpace(fileName))
+        {
+            return null;
+        }
+
+        await InitHttpClientHeaders();
+
+        var path = $"{BasePath}/mis-articulos/{Uri.EscapeDataString(sku)}/imagen/{Uri.EscapeDataString(fileName)}";
+        using var response = await _http.GetAsync(path, ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        var bytes = await response.Content.ReadAsByteArrayAsync(ct);
+        if (bytes.Length == 0)
+        {
+            return null;
+        }
+
+        var mediaType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+        return $"data:{mediaType};base64,{Convert.ToBase64String(bytes)}";
+    }
+
     public async Task<bool> CreateProductoAsync(ProductoCreateRequest request, IReadOnlyList<ImagenCapturada> imagenes, CancellationToken ct = default)
     {
         await InitHttpClientHeaders();
@@ -108,5 +143,13 @@ public sealed class ProductoService : BaseApiService
         using var response = await _http.GetAsync(path, ct);
         if (!response.IsSuccessStatusCode) return new();
         return await response.Content.ReadFromJsonAsync<List<ProductoCatalogoItemDto>>(cancellationToken: ct) ?? new();
+    }
+
+    private async Task<T?> GetJsonAsync<T>(string path, CancellationToken ct = default)
+    {
+        await InitHttpClientHeaders();
+        using var response = await _http.GetAsync(path, ct);
+        if (!response.IsSuccessStatusCode) return default;
+        return await response.Content.ReadFromJsonAsync<T>(cancellationToken: ct);
     }
 }

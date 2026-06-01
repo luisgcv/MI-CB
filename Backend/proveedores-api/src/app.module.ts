@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -36,6 +38,12 @@ import { ProfileModule } from './modules/profile/profile.module';
         encrypt: false,
         trustServerCertificate: true,
       },
+    }),
+
+    // Servir archivos estáticos (uploads)
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
     }),
 
         AuthModule,

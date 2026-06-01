@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  ValidateIf,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
@@ -169,9 +170,15 @@ export class CreateProductDto {
   @ArrayNotEmpty()
   idSucursales!: number[];
 
+  @ValidateIf((o) => {
+    const forma = (o.formaFarmaceutica ?? '') as string;
+    const registro = (o.registroMedicamento ?? '') as string;
+    return Boolean((forma && forma.toString().trim()) || (registro && registro.toString().trim()));
+  })
   @IsNotEmpty()
   @IsString()
-  idCabys!: string;
+  @IsOptional()
+  idCabys?: string;
 
   @IsOptional()
   @IsString()

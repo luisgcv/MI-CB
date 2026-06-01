@@ -114,11 +114,38 @@ export class ProductsService {
 
     const products = await this.productRepository.find({
       where: { providerId },
-      relations: ['status', 'images', 'branches', 'branches.branch', 'cabys', 'cabys.cabys'],
+      relations: ['status'],
       order: { createdAt: 'DESC' },
     });
 
-    return products.map((product) => this.mapProductListItem(product));
+    if (products.length === 0) {
+      return [];
+    }
+
+    const skus = products.map((product) => product.sku);
+
+    const [images, branches, cabys] = await Promise.all([
+      this.productImageRepository.find({
+        where: { sku: In(skus) },
+      }),
+      this.productBranchRepository.find({
+        where: { sku: In(skus) },
+        relations: ['branch'],
+      }),
+      this.productCabysRepository.find({
+        where: { sku: In(skus) },
+        relations: ['cabys'],
+      }),
+    ]);
+
+    return products.map((product) =>
+      this.mapProductListItemFromLookups(
+        product,
+        images.filter((item) => item.sku === product.sku),
+        branches.filter((item) => item.sku === product.sku),
+        cabys.filter((item) => item.sku === product.sku),
+      ),
+    );
   }
 
   async createProduct(
@@ -141,13 +168,12 @@ export class ProductsService {
       throw new BadRequestException('Ya existe un producto con ese SKU.');
     }
 
-    const [provider, unitMeasure, returnCondition, cabys, status] = await Promise.all([
+    const [provider, unitMeasure, returnCondition, status] = await Promise.all([
       this.providerRepository.findOne({ where: { providerId } }),
       this.unitMeasureRepository.findOne({ where: { unitMeasureId: dto.idUnidadMedida } }),
       this.returnConditionRepository.findOne({
         where: { returnConditionId: dto.idCondicionesDevolucion },
       }),
-      this.cabysRepository.findOne({ where: { cabysId: dto.idCabys.trim() } }),
       this.getDefaultStatus(),
     ]);
 
@@ -167,8 +193,20 @@ export class ProductsService {
       throw new BadRequestException('No se encontró el estado por defecto Enviado.');
     }
 
-    if (!cabys) {
-      throw new BadRequestException('El CABYS seleccionado no existe.');
+    const isMedicine =
+      (dto.formaFarmaceutica && dto.formaFarmaceutica.toString().trim() !== '') ||
+      (dto.registroMedicamento && dto.registroMedicamento.toString().trim() !== '');
+
+    let cabys: CabysEntity | null = null;
+    if (dto.idCabys && dto.idCabys.toString().trim() !== '') {
+      cabys = await this.cabysRepository.findOne({ where: { cabysId: dto.idCabys.trim() } });
+      if (!cabys) {
+        throw new BadRequestException('El CABYS seleccionado no existe.');
+      }
+    }
+
+    if (isMedicine && !cabys) {
+      throw new BadRequestException('Para productos medicamentosos el CABYS es obligatorio.');
     }
 
     const branchIds = Array.from(new Set(dto.idSucursales));
@@ -224,14 +262,16 @@ export class ProductsService {
       ),
     );
 
-    await this.productCabysRepository.save(
-      this.productCabysRepository.create({
-        sku: normalizedSku,
-        cabysId: cabys.cabysId,
-        formPharmaceutical: dto.formaFarmaceutica?.trim() ?? '',
-        medicineRegistry: dto.registroMedicamento?.trim() ?? '',
-      }),
-    );
+    if (cabys) {
+      await this.productCabysRepository.save(
+        this.productCabysRepository.create({
+          sku: normalizedSku,
+          cabysId: cabys.cabysId,
+          formPharmaceutical: dto.formaFarmaceutica?.trim() ?? '',
+          medicineRegistry: dto.registroMedicamento?.trim() ?? '',
+        }),
+      );
+    }
 
     if (files.length > 0) {
       await this.saveImages(normalizedSku, files);
@@ -245,22 +285,30 @@ export class ProductsService {
       throw new UnauthorizedException('El usuario no tiene proveedor asociado.');
     }
 
-    const product = await this.productRepository.findOne({
-      where: {
-        sku,
-        providerId,
-      },
-      relations: [
-        'unitMeasure',
-        'returnCondition',
-        'status',
-        'images',
-        'branches',
-        'branches.branch',
-        'cabys',
-        'cabys.cabys',
-      ],
-    });
+    const [provider, product] = await Promise.all([
+      this.providerRepository.findOne({ where: { providerId } }),
+      this.productRepository.findOne({
+        where: {
+          sku,
+          providerId,
+        },
+        relations: [
+          'provider',
+          'unitMeasure',
+          'returnCondition',
+          'status',
+          'images',
+          'branches',
+          'branches.branch',
+          'cabys',
+          'cabys.cabys',
+        ],
+      }),
+    ]);
+
+    if (!provider) {
+      throw new BadRequestException('No se encontró el proveedor del usuario.');
+    }
 
     if (!product) {
       throw new BadRequestException('Producto no encontrado.');
@@ -269,13 +317,10 @@ export class ProductsService {
     return {
       sku: product.sku,
       descripcion: product.description,
-      idUnidadMedida: product.unitMeasureId,
+      proveedor: product.provider?.providerName ?? provider.providerName ?? null,
       unidadMedida: product.unitMeasure?.unitMeasureName ?? null,
-      idCondicionesDevolucion: product.returnConditionId,
       condicionDevolucion: product.returnCondition?.returnConditionName ?? null,
-      idEstado: product.statusId,
       estado: product.status?.statusDescription ?? null,
-      idProveedor: product.providerId,
       porcIva: this.toNumber(product.vatPercentage),
       minDespacho: this.toNumber(product.minDispatch),
       embalaje: this.toNumber(product.packaging),
@@ -296,18 +341,16 @@ export class ProductsService {
       profundidad: this.toNumber(product.depth),
       fechaCreacion: product.createdAt,
       sucursales: product.branches.map((item) => ({
-        id: item.branchId,
         nombre: item.branch?.nombreSucursal ?? null,
       })),
       cabys: product.cabys.map((item) => ({
-        id: item.cabysId,
         nombre: item.cabys?.cabysName ?? null,
         formaFarmaceutica: item.formPharmaceutical,
         registroMedicamento: item.medicineRegistry,
       })),
       imagenes: product.images.map((image) => ({
         nombreArchivo: image.fileName,
-        archivo: image.filePath,
+        archivo: this.buildFileUrl(image.filePath),
       })),
     };
   }
@@ -317,13 +360,20 @@ export class ProductsService {
       throw new UnauthorizedException('El usuario no tiene proveedor asociado.');
     }
 
-    const product = await this.productRepository.findOne({
-      where: {
-        sku,
-        providerId,
-      },
-      relations: ['status', 'images', 'branches', 'branches.branch', 'cabys', 'cabys.cabys'],
-    });
+    const [provider, product] = await Promise.all([
+      this.providerRepository.findOne({ where: { providerId } }),
+      this.productRepository.findOne({
+        where: {
+          sku,
+          providerId,
+        },
+          relations: ['provider', 'status', 'images', 'branches', 'branches.branch', 'cabys', 'cabys.cabys'],
+      }),
+    ]);
+
+    if (!provider) {
+      throw new BadRequestException('No se encontró el proveedor del usuario.');
+    }
 
     if (!product) {
       throw new BadRequestException('Producto no encontrado.');
@@ -340,31 +390,25 @@ export class ProductsService {
       detalle: {
         sku: product.sku,
         descripcion: product.description,
-        idProveedor: product.providerId,
+        proveedor: product.provider?.providerName ?? provider.providerName ?? null,
         fechaCreacion: product.createdAt,
         sucursales: product.branches.map((item) => ({
-          id: item.branchId,
           nombre: item.branch?.nombreSucursal ?? null,
         })),
         cabys: product.cabys.map((item) => ({
-          id: item.cabysId,
           nombre: item.cabys?.cabysName ?? null,
           formaFarmaceutica: item.formPharmaceutical,
           registroMedicamento: item.medicineRegistry,
         })),
       },
       estadoActual: {
-        id: product.statusId,
         nombre: product.status?.statusDescription ?? null,
       },
       historial: history.map((item) => ({
-        id: item.productStateId,
         estado: {
-          id: item.statusId,
           nombre: item.status?.statusDescription ?? null,
         },
         motivo: {
-          id: item.motiveId,
           descripcion: item.motive?.motiveDescription ?? null,
         },
         comentario: item.comment,
@@ -445,6 +489,16 @@ export class ProductsService {
     return Number(value);
   }
 
+  private buildFileUrl(filePath: string | null | undefined) {
+    if (!filePath) return null;
+    const cleaned = filePath.replace(/^\/+/, '');
+    const base = (process.env.APP_URL ?? '').replace(/\/$/, '');
+    if (base) {
+      return `${base}/${cleaned}`;
+    }
+    return `/${cleaned}`;
+  }
+
   private async getDefaultStatus() {
     return this.productStatusRepository.findOne({
       where: [
@@ -452,6 +506,17 @@ export class ProductsService {
         { statusDescription: 'REGISTRADO' },
       ],
     });
+  }
+
+  async verifyProductOwnerOrThrow(sku: string, providerId: string | null) {
+    if (!providerId) {
+      throw new UnauthorizedException('El usuario no tiene proveedor asociado.');
+    }
+
+    const product = await this.productRepository.findOne({ where: { sku, providerId } });
+    if (!product) {
+      throw new BadRequestException('Producto no encontrado o no pertenece al proveedor.');
+    }
   }
 
   private mapProductListItem(product: ProductEntity) {
@@ -466,7 +531,7 @@ export class ProductsService {
       imagenPrincipal: product.images[0]
         ? {
             nombreArchivo: product.images[0].fileName,
-            archivo: product.images[0].filePath,
+            archivo: this.buildFileUrl(product.images[0].filePath),
           }
         : null,
       sucursales: product.branches.map((item) => ({
@@ -475,6 +540,34 @@ export class ProductsService {
       })),
       cabys: product.cabys.map((item) => ({
         id: item.cabysId,
+        nombre: item.cabys?.cabysName ?? null,
+      })),
+    };
+  }
+
+  private mapProductListItemFromLookups(
+    product: ProductEntity,
+    images: ProductImageEntity[],
+    branches: ProductBranchEntity[],
+    cabys: ProductCabysEntity[],
+  ) {
+    return {
+      sku: product.sku,
+      descripcion: product.description,
+      estadoActual: {
+        nombre: product.status?.statusDescription ?? null,
+      },
+      fechaCreacion: product.createdAt,
+      imagenPrincipal: images[0]
+        ? {
+            nombreArchivo: images[0].fileName,
+            archivo: this.buildFileUrl(images[0].filePath),
+          }
+        : null,
+      sucursales: branches.map((item) => ({
+        nombre: item.branch?.nombreSucursal ?? null,
+      })),
+      cabys: cabys.map((item) => ({
         nombre: item.cabys?.cabysName ?? null,
       })),
     };
